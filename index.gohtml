@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Radio Go Go</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        font-size: 0;
+        font-family: sans-serif;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      div.controls {
+        margin: 15px;
+
+        input {
+          width: 100%;
+          padding: 5px;
+          font-size: 11pt;
+          border: 1px solid #aaa;
+          box-shadow: 4px 4px 6px #aaa;
+        }
+      }
+
+      div.cards {
+        display: block;
+      }
+
+      div.card {
+        display: inline-block;
+        margin-left: 15px;
+        margin-bottom: 15px;
+        padding: 15px;
+        width: 350px;
+        border: 1px solid #aaa;
+        box-shadow: 4px 4px 6px #ccc;
+
+        &:hover {
+          background: #eee;
+        }
+
+        &.hidden {
+          display: none;
+        }
+
+        p {
+          margin: 0;
+          padding: 5px;
+          font-size: 11pt;
+          text-align: center;
+
+          &.artist {
+            font-weight: bold;
+          }
+        }
+      }
+
+      @media (max-width: 400px) {
+        div.card {
+          width: 100%;
+        }
+      }
+    </style>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document
+          .querySelector('input[name="filter"]')
+          .addEventListener("input", function (event) {
+            const term = (event.target.value || "").toLocaleLowerCase();
+            for (const card of document.querySelectorAll("div.card")) {
+              card.classList.toggle(
+                "hidden",
+                !card.dataset["term"].toLocaleLowerCase().includes(term)
+              );
+            }
+          });
+      });
+    </script>
+  </head>
+  <body>
+    <div class="controls">
+      <input name="filter" autofocus />
+    </div>
+    <div class="cards">
+      {{ range . }}
+      <div class="card" data-term="{{ .Artist }} {{ .Album }} {{ .Title }}">
+        <p class="artist">{{ .Artist }}</p>
+        <p class="album">{{ .Album }}</p>
+        <p class="title">{{ .Track }} – {{ .Title }}</p>
+        <p class="audio"><audio controls src="/media/{{.FileName}}" /></p>
+      </div>
+      {{ end }}
+    </div>
+  </body>
+</html>
