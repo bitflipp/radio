@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Radio Go Go</title>
+    <link rel="icon" type="image/svg" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/index.css"/>
+    <script src="/static/index.js"></script>
+  </head>
+  <body>
+    <div class="controls">
+      <input name="filter" autofocus />
+    </div>
+    <div class="cards">
+      {{ range . }}
+      <div class="card" data-term="{{ .Artist }} {{ .Album }} {{ .Title }}">
+        <p class="artist">{{ .Artist }}</p>
+        <p class="album">{{ .Album }}</p>
+        <p class="title">{{ .Track }} – {{ .Title }}</p>
+        <p class="audio"><audio controls src="/media/{{.FileName}}" /></p>
+      </div>
+      {{ end }}
+    </div>
+  </body>
+</html>

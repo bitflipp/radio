@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	_ "embed"
 	"fmt"
 	"html/template"
@@ -14,13 +15,16 @@ import (
 )
 
 const (
+	address   = ":1984"
 	mediaRoot = "./media"
 )
 
 var (
-	indexTemplate *template.Template
-	//go:embed index.gohtml
-	indexTemplateHTML string
+	htmlTemplate *template.Template
+	//go:embed templates
+	templateFS embed.FS
+	//go:embed static
+	staticFS embed.FS
 )
 
 type media struct {
@@ -77,7 +81,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to read media", http.StatusInternalServerError)
 		return
 	}
-	if err := indexTemplate.Execute(w, ms); err != nil {
+	if err := htmlTemplate.Execute(w, ms); err != nil {
 		log.Printf("failed to execute index template: %s", err)
 		http.Error(w, "failed execute index template", http.StatusInternalServerError)
 		return
@@ -86,13 +90,14 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	var err error
-	indexTemplate, err = template.New("").Parse(indexTemplateHTML)
+	htmlTemplate, err = template.ParseFS(templateFS, "templates/*.gohtml")
 	if err != nil {
 		log.Fatalf("failed to parse index template: %s", err)
 	}
 	http.Handle("/media/", http.StripPrefix("/media/", http.FileServer(http.Dir(mediaRoot))))
+	http.Handle("/static/", http.FileServerFS(staticFS))
 	http.HandleFunc("/", handleIndex)
-	if err := http.ListenAndServe(":1984", nil); err != nil {
+	if err := http.ListenAndServe(address, nil); err != nil {
 		log.Fatalf("failed to listen and serve: %s", err)
 	}
 }
