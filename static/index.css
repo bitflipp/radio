@@ -59,6 +59,18 @@ table {
       display: none;
     }
 
+    &.controls {
+      width: 120px;
+    }
+
+    &.time {
+      width: 120px;
+    }
+
+    &.track {
+      width: 60px;
+    }
+
     button {
       img {
         margin-bottom: -2px;
