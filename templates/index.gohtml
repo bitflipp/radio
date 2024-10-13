@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Go Go</title>
-    <link rel="icon" type="image/svg" href="/static/favicon.svg">
-    <link rel="stylesheet" href="/static/index.css"/>
+    <link rel="icon" type="image/svg" href="/static/favicon.svg" />
+    <link rel="stylesheet" href="/static/index.css" />
     <script src="/static/index.js"></script>
   </head>
   <body>
@@ -23,7 +23,11 @@
       </tr>
       {{ range . }}
       <tr class="media" data-term="{{ .Artist }} {{ .Album }} {{ .Title }}">
-        <td class="controls"><button data-action="toggle">[Play]</button></td>
+        <td class="controls">
+          <button data-action="toggle">[Play]</button>
+          <button data-action="seekBackwards">[Backwards]</button>
+          <button data-action="seekForwards">[Forwards]</button>
+        </td>
         <td class="time">?</td>
         <td>{{ .Artist }}</td>
         <td>{{ .Album }}</td>
@@ -31,7 +35,9 @@
         <td>{{ .Title }}</td>
         <td class="audio"><audio src="/media/{{ .FileName }}" /></td>
       </tr>
-      {{ end }}
+      {{
+        end
+      }}
     </table>
   </body>
 </html>

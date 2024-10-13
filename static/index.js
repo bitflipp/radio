@@ -31,9 +31,15 @@
         } else {
           audio.pause();
         }
-        updateControls();
+        break;
+      case "seekBackwards":
+        audio.currentTime = Math.max(0, audio.currentTime - 10);
+        break;
+      case "seekForwards":
+        audio.currentTime = Math.min(audio.currentTime + 10, audio.duration);
         break;
     }
+    updateControls();
   }
 
   function onAudioCanPlay() {
@@ -70,6 +76,12 @@
         switch (action) {
           case "toggle":
             button.innerHTML = audio.paused ? "[Play]" : "[Pause]";
+            break;
+          case "seekBackwards":
+            button.disabled = audio.paused;
+            break;
+          case "seekForwards":
+            button.disabled = audio.paused;
             break;
         }
       }
