@@ -1,12 +1,13 @@
 (function () {
-  let updateControlsInterval;
-
   function onFilterInput(event) {
     const term = (event.target.value || "").toLocaleLowerCase();
     for (const tr of document.querySelectorAll("tr.media")) {
+      const audio = tr.querySelector("audio");
       tr.classList.toggle(
-        "highlight",
-        term && tr.dataset["term"].toLocaleLowerCase().includes(term)
+        "filtered",
+        term &&
+          !tr.dataset["term"].toLocaleLowerCase().includes(term) &&
+          audio.paused
       );
     }
   }
@@ -39,20 +40,6 @@
         audio.currentTime = Math.min(audio.currentTime + 10, audio.duration);
         break;
     }
-    updateControls();
-  }
-
-  function onAudioCanPlay() {
-    updateControls();
-  }
-
-  function onAudioPlay() {
-    updateControls();
-    updateControlsInterval = setInterval(updateControls, 1000);
-  }
-
-  function onAudioPause() {
-    clearTimeout(updateControlsInterval);
   }
 
   function stopAllExcept(exceptAudio) {
@@ -62,7 +49,6 @@
         audio.currentTime = 0;
       }
     }
-    updateControls();
   }
 
   function updateControls() {
@@ -75,7 +61,8 @@
         const action = button.dataset["action"];
         switch (action) {
           case "toggle":
-            button.innerHTML = audio.paused ? "[Play]" : "[Pause]";
+            button.querySelector("img").src =
+              "/static/" + (audio.paused ? "play" : "pause") + ".png";
             break;
           case "seekBackwards":
             button.disabled = audio.paused;
@@ -107,12 +94,15 @@
       .addEventListener("input", onFilterInput);
     document.addEventListener("keydown", onDocumentKeyDown);
     for (const audio of document.querySelectorAll("audio")) {
-      audio.addEventListener("canplay", onAudioCanPlay);
-      audio.addEventListener("play", onAudioPlay);
-      audio.addEventListener("pause", onAudioPause);
+      audio.addEventListener("canplay", updateControls);
+      audio.addEventListener("play", updateControls);
+      audio.addEventListener("pause", updateControls);
+      audio.addEventListener("suspend", updateControls);
+      audio.addEventListener("seek", updateControls);
     }
     for (const control of document.querySelectorAll("button")) {
       control.addEventListener("click", onButtonControlClick);
     }
+    setInterval(updateControls, 1000);
   });
 })();

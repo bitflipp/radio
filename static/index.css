@@ -34,8 +34,8 @@ table {
   box-shadow: var(--box-shadow);
 
   tr {
-    &.highlight {
-      font-size: 20pt;
+    &.filtered {
+      display: none;
     }
 
     &:hover {
@@ -57,6 +57,14 @@ table {
 
     &.audio {
       display: none;
+    }
+
+    button {
+      img {
+        margin-bottom: -2px;
+        height: 16px;
+        pointer-events: none;
+      }
     }
   }
 }

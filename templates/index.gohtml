@@ -24,9 +24,9 @@
       {{ range . }}
       <tr class="media" data-term="{{ .Artist }} {{ .Album }} {{ .Title }}">
         <td class="controls">
-          <button data-action="toggle">[Play]</button>
-          <button data-action="seekBackwards">[Backwards]</button>
-          <button data-action="seekForwards">[Forwards]</button>
+          <button data-action="toggle"><img/></button>
+          <button data-action="seekBackwards"><img src="/static/seekBackwards.png"/></button>
+          <button data-action="seekForwards"><img src="/static/seekForwards.png"/></button>
         </td>
         <td class="time">?</td>
         <td>{{ .Artist }}</td>
@@ -35,9 +35,7 @@
         <td>{{ .Title }}</td>
         <td class="audio"><audio src="/media/{{ .FileName }}" /></td>
       </tr>
-      {{
-        end
-      }}
+      {{ end }}
     </table>
   </body>
 </html>
