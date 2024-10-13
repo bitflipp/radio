@@ -12,15 +12,26 @@
     <div class="controls">
       <input name="filter" autofocus />
     </div>
-    <div class="cards">
+    <table>
+      <tr>
+        <th></th>
+        <th>Time</th>
+        <th>Artist</th>
+        <th>Album</th>
+        <th>Track</th>
+        <th>Title</th>
+      </tr>
       {{ range . }}
-      <div class="card" data-term="{{ .Artist }} {{ .Album }} {{ .Title }}">
-        <p class="artist">{{ .Artist }}</p>
-        <p class="album">{{ .Album }}</p>
-        <p class="title">{{ .Track }} – {{ .Title }}</p>
-        <p class="audio"><audio controls src="/media/{{.FileName}}" /></p>
-      </div>
+      <tr class="media" data-term="{{ .Artist }} {{ .Album }} {{ .Title }}">
+        <td class="controls"><button data-action="toggle">[Play]</button></td>
+        <td class="time">?</td>
+        <td>{{ .Artist }}</td>
+        <td>{{ .Album }}</td>
+        <td>{{ .Track }}</td>
+        <td>{{ .Title }}</td>
+        <td class="audio"><audio src="/media/{{ .FileName }}" /></td>
+      </tr>
       {{ end }}
-    </div>
+    </table>
   </body>
 </html>
