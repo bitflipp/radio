@@ -82,7 +82,8 @@ table {
     }
 
     &.range {
-      width: 300px;
+      padding: 0 30px;
+      width: 500px;
     }
 
     &.time {
