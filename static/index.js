@@ -27,7 +27,9 @@
   function onDocumentKeyDown(event) {
     if (event.key === "f" && event.ctrlKey) {
       event.preventDefault();
-      document.querySelector('input[name="filter"]').focus();
+      const filterInput = document.querySelector('input[name="filter"]');
+      filterInput.focus();
+      filterInput.select();
     }
   }
 
