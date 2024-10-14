@@ -9,13 +9,15 @@
     <script src="/static/index.js"></script>
   </head>
   <body>
-    <div class="controls">
-      <input name="filter" autofocus />
-    </div>
-    <table>
+    <table class="controls">
       <tr>
-        <th></th>
-        <th>Time</th>
+        <td class="filter"><input type="text" name="filter" autofocus /></td>
+        <td class="range"><input type="range" name="range" value="0" /></td>
+        <td class="time"><input type="text" name="time" readonly /></td>
+      </tr>
+    </table>
+    <table class="media">
+      <tr>
         <th>Artist</th>
         <th>Album</th>
         <th>Track</th>
@@ -23,16 +25,10 @@
       </tr>
       {{ range . }}
       <tr class="media" data-term="{{ .Artist }} {{ .Album }} {{ .Title }}">
-        <td class="controls">
-          <button data-action="toggle"><img/></button>
-          <button data-action="seekBackwards"><img src="/static/seekBackwards.png"/></button>
-          <button data-action="seekForwards"><img src="/static/seekForwards.png"/></button>
-        </td>
-        <td class="time">?</td>
-        <td>{{ .Artist }}</td>
-        <td>{{ .Album }}</td>
+        <td class="artist">{{ .Artist }}</td>
+        <td class="album">{{ .Album }}</td>
         <td class="track">{{ .Track }}</td>
-        <td>{{ .Title }}</td>
+        <td class="title">{{ .Title }}</td>
         <td class="audio"><audio src="/media/{{ .FileName }}" /></td>
       </tr>
       {{ end }}

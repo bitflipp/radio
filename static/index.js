@@ -12,6 +12,18 @@
     }
   }
 
+  function onRangeInput(event) {
+    for (const audio of document.querySelectorAll("audio")) {
+      if (audio.paused) {
+        continue;
+      }
+      audio.currentTime = Math.ceil(
+        (event.target.value / 100) * audio.duration
+      );
+      break;
+    }
+  }
+
   function onDocumentKeyDown(event) {
     if (event.key === "f" && event.ctrlKey) {
       event.preventDefault();
@@ -19,26 +31,13 @@
     }
   }
 
-  function onButtonControlClick(event) {
-    const element = event.target;
-    const tr = element.closest("tr");
-    const audio = tr.querySelector("audio");
-    const action = event.target.dataset["action"];
-    switch (action) {
-      case "toggle":
-        if (audio.paused) {
-          stopAllExcept(audio);
-          audio.play();
-        } else {
-          audio.pause();
-        }
-        break;
-      case "seekBackwards":
-        audio.currentTime = Math.max(0, audio.currentTime - 10);
-        break;
-      case "seekForwards":
-        audio.currentTime = Math.min(audio.currentTime + 10, audio.duration);
-        break;
+  function onTdClick(event) {
+    const audio = event.target.parentNode.querySelector("audio");
+    if (audio.paused) {
+      stopAllExcept(audio);
+      audio.play();
+    } else {
+      audio.pause();
     }
   }
 
@@ -52,26 +51,31 @@
   }
 
   function updateControls() {
+    const rangeInput = document.querySelector('input[name="range"]');
+    rangeInput.value = 0;
+    rangeInput.disabled = true;
+    const timeInput = document.querySelector('input[name="time"]');
+    timeInput.value = "";
     for (const audio of document.querySelectorAll("audio")) {
       const tr = audio.closest("tr");
-      tr.querySelector("td.time").innerHTML =
-        (audio.paused ? "" : formatDuration(audio.currentTime) + "/") +
-        formatDuration(audio.duration);
-      for (const button of tr.querySelectorAll("button")) {
-        const action = button.dataset["action"];
-        switch (action) {
-          case "toggle":
-            button.querySelector("img").src =
-              "/static/" + (audio.paused ? "play" : "pause") + ".png";
-            break;
-          case "seekBackwards":
-            button.disabled = audio.paused;
-            break;
-          case "seekForwards":
-            button.disabled = audio.paused;
-            break;
-        }
+      if (audio.paused) {
+        tr.classList.remove("playing");
+        continue;
       }
+      rangeInput.value = (audio.currentTime / audio.duration) * 100;
+      rangeInput.disabled = false;
+      timeInput.value =
+        formatDuration(audio.currentTime) +
+        "/" +
+        formatDuration(audio.duration);
+      tr.classList.add("playing");
+    }
+  }
+
+  function onAudioEnded(event) {
+    const nextTr = event.target.closest("tr").nextElementSibling;
+    if (nextTr) {
+      nextTr.querySelector("audio").play();
     }
   }
 
@@ -92,16 +96,20 @@
     document
       .querySelector('input[name="filter"]')
       .addEventListener("input", onFilterInput);
+    document
+      .querySelector('input[name="range"]')
+      .addEventListener("input", onRangeInput);
     document.addEventListener("keydown", onDocumentKeyDown);
     for (const audio of document.querySelectorAll("audio")) {
       audio.addEventListener("canplay", updateControls);
       audio.addEventListener("play", updateControls);
       audio.addEventListener("pause", updateControls);
-      audio.addEventListener("suspend", updateControls);
       audio.addEventListener("seek", updateControls);
+      audio.addEventListener("suspend", updateControls);
+      audio.addEventListener("ended", onAudioEnded);
     }
-    for (const control of document.querySelectorAll("button")) {
-      control.addEventListener("click", onButtonControlClick);
+    for (const tr of document.querySelectorAll("tr.media td")) {
+      tr.addEventListener("click", onTdClick);
     }
     setInterval(updateControls, 1000);
   });
