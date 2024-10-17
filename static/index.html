@@ -33,6 +33,7 @@
         <tr
           :class="['media', activeMedia === media && 'active']"
           v-for="media in allMedia"
+          :title="media.fileName"
           @click="onMediaClick(media)"
         >
           <td width="20%">{{ media.artist }}</td>

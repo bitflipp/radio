@@ -44,7 +44,6 @@ func readMedia() ([]media, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to open media file: %w", err)
 		}
-		defer mf.Close()
 		t, err := tag.ReadFrom(mf)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read tags from media file: %w", err)
@@ -57,6 +56,7 @@ func readMedia() ([]media, error) {
 			Track:    d,
 			FileName: f.Name(),
 		}
+		mf.Close()
 	}
 	sort.Slice(ms, func(i, j int) bool {
 		ti := ms[i].Artist + ms[i].Album
