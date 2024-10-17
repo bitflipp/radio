@@ -72,6 +72,7 @@ func readMedia() ([]media, error) {
 func handleAPIMedia(w http.ResponseWriter, r *http.Request) {
 	ms, err := readMedia()
 	if err != nil {
+		log.Printf("failed to read media: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
