@@ -17,6 +17,8 @@ createApp({
       const index = allMedia.value.indexOf(activeMedia.value);
       if (index < allMedia.value.length - 1) {
         activeMedia.value = allMedia.value[index + 1];
+      } else {
+        activeMedia.value = undefined;
       }
     }
 
