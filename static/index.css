@@ -2,60 +2,54 @@
   --color-primary: #aaa;
   --color-primary-light: #eee;
   --color-background: #fff;
-  --box-shadow: 4px 4px 6px var(--color-primary);
+  --border: 1px solid var(--color-primary);
+  --margin: 20px;
 }
 
 * {
   box-sizing: border-box;
+  font-size: 11pt;
   font-family: sans-serif;
 }
 
 body {
-  margin: 15px;
+  margin: var(--margin);
+  margin-top: 0;
   padding: 0;
-  background: var(--color-background);
 }
 
-button {
-  img {
-    margin-bottom: -2px;
-    height: 16px;
-    pointer-events: none;
+div {
+  &.sticky {
+    position: sticky;
+    top: 0;
   }
-}
 
-input {
-  width: 100%;
-  border: 1px solid var(--color-primary);
+  &.spacer {
+    padding-bottom: var(--margin);
+    background: var(--color-background);
+  }
 
-  &[type="text"] {
-    padding: 5px;
-    font-size: 11pt;
+  &.audio {
+    background: var(--color-background);
+
+    audio {
+      width: 100%;
+    }
   }
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  box-shadow: var(--box-shadow);
-
-  &.controls {
-    margin-bottom: 15px;
-  }
 
   tr {
-    &.filtered {
-      display: none;
-    }
-
-    &.playing {
-      font-weight: bold;
-    }
-
     &.media {
-      cursor: pointer;
+      &.active {
+        font-weight: bold;
+      }
 
       &:hover {
+        cursor: pointer;
         background: var(--color-primary-light);
       }
     }
@@ -63,7 +57,7 @@ table {
 
   th {
     padding: 5px;
-    border: 1px solid var(--color-primary);
+    border: var(--border);
     background-color: var(--color-primary);
     color: var(--color-background);
     font-weight: normal;
@@ -71,26 +65,6 @@ table {
 
   td {
     padding: 5px;
-    border: 1px solid var(--color-primary);
-
-    &.audio {
-      display: none;
-    }
-
-    &.track {
-      width: 60px;
-    }
-
-    &.range {
-      padding: 0 30px;
-      width: 500px;
-    }
-
-    &.time {
-      width: 150px;
-    }
+    border: var(--border);
   }
-}
-
-@media (max-width: 400px) {
 }

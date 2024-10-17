@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Radio Go Go</title>
+    <link rel="stylesheet" href="/index.css" />
+    <link rel="icon" type="image/svg" href="/static/favicon.svg" />
+    <script src="/vue.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div class="sticky">
+        <div class="spacer"></div>
+        <div class="audio">
+          <audio
+            controls
+            :autoplay="!!activeMedia"
+            ref="audio"
+            :src="activeMedia && ('/media/' + activeMedia.fileName)"
+            @ended="onAudioEnded"
+          />
+        </div>
+        <div class="spacer"></div>
+        <table class="headers">
+          <tr>
+            <th width="20%">Artist</th>
+            <th width="30%">Album</th>
+            <th width="10%">Track</th>
+            <th width="40%">Title</th>
+          </tr>
+        </table>
+      </div>
+      <table v-if="allMedia" class="allMedia">
+        <tr
+          :class="['media', activeMedia === media && 'active']"
+          v-for="media in allMedia"
+          @click="onMediaClick(media)"
+        >
+          <td width="20%">{{ media.artist }}</td>
+          <td width="30%">{{ media.album }}</td>
+          <td width="10%">{{ media.track }}</td>
+          <td width="40%">{{ media.title }}</td>
+        </tr>
+      </table>
+      <table v-else>
+        <tr>
+          <td>Loading media...</td>
+        </tr>
+      </table>
+    </div>
+    <script src="/index.js"></script>
+  </body>
+</html>

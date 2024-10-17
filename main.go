@@ -2,8 +2,9 @@ package main
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
-	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -19,21 +20,16 @@ const (
 )
 
 var (
-	htmlTemplate *template.Template
-	//go:embed templates
-	templateFS embed.FS
 	//go:embed static
 	staticFS embed.FS
 )
 
 type media struct {
-	filePath string
-	FileName string
-	Album    string
-	Artist   string
-	Title    string
-	Length   string
-	Track    int
+	Album    string `json:"album"`
+	Artist   string `json:"artist"`
+	Title    string `json:"title"`
+	Track    int    `json:"track"`
+	FileName string `json:"fileName"`
 }
 
 func readMedia() ([]media, error) {
@@ -55,11 +51,11 @@ func readMedia() ([]media, error) {
 		}
 		d, _ := t.Track()
 		ms[i] = media{
-			FileName: f.Name(),
 			Album:    t.Album(),
 			Artist:   t.Artist(),
 			Title:    t.Title(),
 			Track:    d,
+			FileName: f.Name(),
 		}
 	}
 	sort.Slice(ms, func(i, j int) bool {
@@ -73,29 +69,23 @@ func readMedia() ([]media, error) {
 	return ms, nil
 }
 
-func handleIndex(w http.ResponseWriter, r *http.Request) {
+func handleAPIMedia(w http.ResponseWriter, r *http.Request) {
 	ms, err := readMedia()
 	if err != nil {
-		log.Printf("failed to read media: %s", err)
-		http.Error(w, "failed to read media", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if err := htmlTemplate.Execute(w, ms); err != nil {
-		log.Printf("failed to execute index template: %s", err)
-		http.Error(w, "failed execute index template", http.StatusInternalServerError)
-		return
-	}
+	json.NewEncoder(w).Encode(ms)
 }
 
 func main() {
-	var err error
-	htmlTemplate, err = template.ParseFS(templateFS, "templates/*.gohtml")
-	if err != nil {
-		log.Fatalf("failed to parse index template: %s", err)
-	}
+	http.HandleFunc("/api/media", handleAPIMedia)
 	http.Handle("/media/", http.StripPrefix("/media/", http.FileServer(http.Dir(mediaRoot))))
-	http.Handle("/static/", http.FileServerFS(staticFS))
-	http.HandleFunc("/", handleIndex)
+	sfs, err := fs.Sub(staticFS, "static")
+	if err != nil {
+		log.Fatalf("failed to create subtree: %s", err)
+	}
+	http.Handle("/", http.FileServerFS(sfs))
 	if err := http.ListenAndServe(address, nil); err != nil {
 		log.Fatalf("failed to listen and serve: %s", err)
 	}
