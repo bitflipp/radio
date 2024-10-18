@@ -20,7 +20,7 @@ createApp({
     }
 
     fetch("/api/media").then((response) => {
-      response.json().then((json) => (allMedia.value = json));
+      response.json().then((allMedia) => (allMedia.value = allMedia));
     });
 
     return {
