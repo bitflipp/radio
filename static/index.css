@@ -15,23 +15,13 @@
 
 body {
   margin: var(--margin);
-  margin-top: 0;
   padding: 0;
 }
 
 div {
-  &.sticky {
-    position: sticky;
-    top: 0;
-  }
-
-  &.spacer {
-    padding-bottom: var(--margin);
-    background: var(--color-background);
-  }
-
   &.audio {
     background: var(--color-background);
+    margin-bottom: var(--margin);
 
     audio {
       width: 100%;
