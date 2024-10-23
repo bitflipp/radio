@@ -11,6 +11,6 @@ dist: clean
 	go build -o dist/radiogogo
 
 deploy: dist
-	rsync -av dist/ root@phinau.de:/home/radiogogo
-	ssh root@phinau.de "chown -R radiogogo: /home/radiogogo"
-	ssh root@phinau.de "systemctl restart radiogogo"
+	rsync -av dist/ root@phinau.de:/home/radio
+	ssh root@phinau.de "chown -R radio: /home/radio"
+	ssh root@phinau.de "systemctl restart radio"
