@@ -20,33 +20,35 @@
           />
         </div>
         <div class="spacer"></div>
-        <table class="headers">
-          <tr>
-            <th width="20%">Artist</th>
-            <th width="30%">Album</th>
-            <th width="10%">Track</th>
-            <th width="40%">Title</th>
-          </tr>
-        </table>
+        <div class="media">
+          <table class="headers">
+            <tr>
+              <th width="20%">Artist</th>
+              <th width="30%">Album</th>
+              <th width="10%">Track</th>
+              <th width="40%">Title</th>
+            </tr>
+          </table>
+          <table v-if="allMedia" class="allMedia">
+            <tr
+              :class="['media', activeMedia === media && 'active']"
+              v-for="media in allMedia"
+              :title="media.fileName"
+              @click="onMediaClick(media)"
+            >
+              <td width="20%">{{ media.artist }}</td>
+              <td width="30%">{{ media.album }}</td>
+              <td width="10%">{{ media.track }}</td>
+              <td width="40%">{{ media.title }}</td>
+            </tr>
+          </table>
+          <table v-else>
+            <tr>
+              <td>Loading media...</td>
+            </tr>
+          </table>
+        </div>
       </div>
-      <table v-if="allMedia" class="allMedia">
-        <tr
-          :class="['media', activeMedia === media && 'active']"
-          v-for="media in allMedia"
-          :title="media.fileName"
-          @click="onMediaClick(media)"
-        >
-          <td width="20%">{{ media.artist }}</td>
-          <td width="30%">{{ media.album }}</td>
-          <td width="10%">{{ media.track }}</td>
-          <td width="40%">{{ media.title }}</td>
-        </tr>
-      </table>
-      <table v-else>
-        <tr>
-          <td>Loading media...</td>
-        </tr>
-      </table>
     </div>
     <script src="/index.js"></script>
   </body>

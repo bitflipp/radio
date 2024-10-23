@@ -3,6 +3,7 @@
   --color-primary-light: #eee;
   --color-background: #fff;
   --border: 1px solid var(--color-primary);
+  --box-shadow: 3px 3px 6px var(--color-primary);
   --margin: 20px;
 }
 
@@ -36,6 +37,10 @@ div {
       width: 100%;
     }
   }
+
+  &.media {
+    box-shadow: var(--box-shadow);
+  }
 }
 
 table {
@@ -66,5 +71,14 @@ table {
   td {
     padding: 5px;
     border: var(--border);
+  }
+}
+
+audio {
+  box-shadow: var(--box-shadow);
+  border: var(--border);
+
+  &::-webkit-media-controls-enclosure {
+    border-radius: 0;
   }
 }
