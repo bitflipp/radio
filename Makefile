@@ -8,7 +8,7 @@ clean:
 
 dist: clean
 	mkdir dist
-	go build -o dist/radiogogo
+	go build -o dist/radio
 
 deploy: dist
 	rsync -av dist/ root@phinau.de:/home/radio
