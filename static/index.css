@@ -27,15 +27,12 @@ div {
       width: 100%;
     }
   }
-
-  &.media {
-    box-shadow: var(--box-shadow);
-  }
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  box-shadow: var(--box-shadow);
 
   tr {
     &.media {
