@@ -17,7 +17,7 @@
           @ended="onAudioEnded"
         />
       </div>
-      <table v-if="allMedia">
+      <table>
         <tr>
           <th width="20%">Artist</th>
           <th width="30%">Album</th>
@@ -34,11 +34,6 @@
           <td width="30%">{{ media.album }}</td>
           <td width="10%">{{ media.track }}</td>
           <td width="40%">{{ media.title }}</td>
-        </tr>
-      </table>
-      <table v-else>
-        <tr>
-          <td>Loading media...</td>
         </tr>
       </table>
     </div>
