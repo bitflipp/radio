@@ -1,35 +1,33 @@
-(function () {
-  const { createApp, ref } = Vue;
-  const app = {
-    setup() {
-      const allMedia = ref();
-      const activeMedia = ref();
+import { createApp, ref } from "./vue.js";
 
-      function onMediaClick(media) {
-        if (activeMedia.value === media) {
-          activeMedia.value = undefined;
-          return;
-        }
-        activeMedia.value = media;
+createApp({
+  setup() {
+    const allMedia = ref();
+    const activeMedia = ref();
+
+    function onMediaClick(media) {
+      if (activeMedia.value === media) {
+        activeMedia.value = undefined;
+        return;
       }
+      activeMedia.value = media;
+    }
 
-      function onAudioEnded() {
-        const index = allMedia.value.indexOf(activeMedia.value);
-        activeMedia.value =
-          index < allMedia.value.length - 1 && allMedia.value[index + 1];
-      }
+    function onAudioEnded() {
+      const index = allMedia.value.indexOf(activeMedia.value);
+      activeMedia.value =
+        index < allMedia.value.length - 1 && allMedia.value[index + 1];
+    }
 
-      fetch("/api/media").then((response) => {
-        response.json().then((data) => (allMedia.value = data));
-      });
+    fetch("/api/media").then((response) => {
+      response.json().then((data) => (allMedia.value = data));
+    });
 
-      return {
-        allMedia,
-        activeMedia,
-        onMediaClick,
-        onAudioEnded,
-      };
-    },
-  };
-  createApp(app).mount("#app");
-})();
+    return {
+      allMedia,
+      activeMedia,
+      onMediaClick,
+      onAudioEnded,
+    };
+  },
+}).mount("#app");
