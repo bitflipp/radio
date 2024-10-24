@@ -10,6 +10,10 @@ dist: clean
 	mkdir dist
 	go build -o dist/radio
 
+upgrade:
+	go get -u ./...
+	go mod tidy
+
 deploy: dist
 	rsync -av dist/ root@phinau.de:/home/radio
 	ssh root@phinau.de "chown -R radio: /home/radio"
