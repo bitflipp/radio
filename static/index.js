@@ -30,4 +30,4 @@ createApp({
       onAudioEnded,
     };
   },
-}).mount("#app");
+}).mount("body");
