@@ -2,6 +2,7 @@ import { createApp, ref } from "./vue.js";
 
 createApp({
   setup() {
+    const initialized = ref(false);
     const allMedia = ref();
     const activeMedia = ref();
 
@@ -21,9 +22,11 @@ createApp({
 
     fetch("/api/media").then((response) => {
       response.json().then((data) => (allMedia.value = data));
+      initialized.value = true;
     });
 
     return {
+      initialized,
       allMedia,
       activeMedia,
       onMediaClick,

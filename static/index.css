@@ -19,6 +19,24 @@ body {
 }
 
 div {
+  &.spinner {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 9px solid;
+    border-color: var(--color-primary-light);
+    border-right-color: var(--color-primary);
+    animation: spinner 1s infinite linear;
+  }
+
+  &.radio {
+    display: none;
+
+    &.initialized {
+      display: unset;
+    }
+  }
+
   &.audio {
     background: var(--color-background);
     margin-bottom: var(--margin);
@@ -67,5 +85,11 @@ audio {
 
   &::-webkit-media-controls-enclosure {
     border-radius: 0;
+  }
+}
+
+@keyframes spinner {
+  to {
+    transform: rotate(1turn);
   }
 }
