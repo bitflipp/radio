@@ -33,9 +33,9 @@ createApp({
     function activateNextMedia() {
       const index = filteredMedia.value.indexOf(activeMedia.value);
       activeMedia.value =
-        index < filteredMedia.value.length - 1
-          ? filteredMedia.value[index + 1]
-          : undefined;
+        filteredMedia.value[
+          index < filteredMedia.value.length - 1 ? index + 1 : 0
+        ];
     }
 
     function onMediaClick(media) {
@@ -44,7 +44,7 @@ createApp({
         return;
       }
       activeMedia.value = media;
-      focusFilterInput();
+      focusFilterInput;
     }
 
     function onFilterInputKeyDown(event) {
