@@ -1,4 +1,4 @@
-import { createApp, ref, computed, useTemplateRef } from "./vue.js";
+import { createApp, ref, computed, useTemplateRef, nextTick } from "./vue.js";
 
 createApp({
   setup() {
@@ -23,6 +23,11 @@ createApp({
         media.title
       ).toLocaleLowerCase();
       return mediaTermLower.includes(filterTerm.value);
+    }
+
+    function focusFilterInput() {
+      filterInputRef.value.focus();
+      filterInputRef.value.select();
     }
 
     function activateNextMedia() {
@@ -53,14 +58,14 @@ createApp({
     document.addEventListener("keydown", (event) => {
       if (event.ctrlKey && event.key === "f") {
         event.preventDefault();
-        filterInputRef.value.focus();
-        filterInputRef.value.select();
+        focusFilterInput();
       }
     });
 
     fetch("/api/media").then((response) => {
       response.json().then((data) => (allMedia.value = data));
       initialized.value = true;
+      nextTick(focusFilterInput);
     });
 
     return {
