@@ -40,10 +40,10 @@ div {
   &.audio {
     background: var(--color-background);
     margin-bottom: var(--margin);
+  }
 
-    audio {
-      width: 100%;
-    }
+  &.filter {
+    margin-bottom: var(--margin);
   }
 }
 
@@ -80,12 +80,20 @@ table {
 }
 
 audio {
-  box-shadow: var(--box-shadow);
+  width: 100%;
   border: var(--border);
+  box-shadow: var(--box-shadow);
 
   &::-webkit-media-controls-enclosure {
     border-radius: 0;
   }
+}
+
+input {
+  padding: 10px;
+  width: 100%;
+  border: var(--border);
+  box-shadow: var(--box-shadow);
 }
 
 @keyframes spinner {

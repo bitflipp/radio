@@ -15,28 +15,41 @@
           :autoplay="!!activeMedia"
           ref="audio"
           :src="activeMedia && ('/media/' + activeMedia.fileName)"
-          @ended="onAudioEnded"
+          @ended="activateNextMedia"
         />
       </div>
-      <table>
-        <tr>
-          <th width="20%">Artist</th>
-          <th width="30%">Album</th>
-          <th width="10%">Track</th>
-          <th width="40%">Title</th>
-        </tr>
-        <tr
-          :class="['media', activeMedia === media && 'active']"
-          v-for="media in allMedia"
-          :title="media.fileName"
-          @click="onMediaClick(media)"
-        >
-          <td width="20%">{{ media.artist }}</td>
-          <td width="30%">{{ media.album }}</td>
-          <td width="10%">{{ media.track }}</td>
-          <td width="40%">{{ media.title }}</td>
-        </tr>
-      </table>
+      <div class="filter">
+        <input
+          type="text"
+          v-model="filterTerm"
+          ref="filterInput"
+          @keydown="onFilterInputKeyDown"
+        />
+      </div>
+      <div class="media">
+        <table>
+          <tr>
+            <th width="20%">Artist</th>
+            <th width="30%">Album</th>
+            <th width="10%">Track</th>
+            <th width="40%">Title</th>
+          </tr>
+          <tr
+            :class="['media', activeMedia === media && 'active']"
+            v-for="media in filteredMedia"
+            :title="media.fileName"
+            @click="onMediaClick(media)"
+          >
+            <td width="20%">{{ media.artist }}</td>
+            <td width="30%">{{ media.album }}</td>
+            <td width="10%">{{ media.track }}</td>
+            <td width="40%">{{ media.title }}</td>
+          </tr>
+          <tr v-if="filteredMedia.length === 0">
+            <td colspan="4">Keine Suchergebnisse.</td>
+          </tr>
+        </table>
+      </div>
     </div>
   </body>
 </html>
