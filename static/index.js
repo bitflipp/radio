@@ -39,11 +39,7 @@ createApp({
     }
 
     function onMediaClick(media) {
-      if (activeMedia.value === media) {
-        activeMedia.value = undefined;
-        return;
-      }
-      activeMedia.value = media;
+      activeMedia.value = activeMedia.value === media ? undefined : media;
       focusFilterInput();
     }
 
