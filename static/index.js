@@ -44,7 +44,7 @@ createApp({
         return;
       }
       activeMedia.value = media;
-      focusFilterInput;
+      focusFilterInput();
     }
 
     function onFilterInputKeyDown(event) {
