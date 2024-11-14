@@ -71,11 +71,22 @@ table {
     background-color: var(--color-primary);
     color: var(--color-background);
     font-weight: normal;
+    white-space: nowrap;
+
+    &:last-child {
+      width: 99%;
+    }
   }
 
   td {
     padding: 5px;
     border: var(--border);
+
+    white-space: nowrap;
+
+    &:last-child {
+      width: 99%;
+    }
   }
 }
 

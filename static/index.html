@@ -29,10 +29,10 @@
       <div class="media">
         <table>
           <tr>
-            <th width="20%">Artist</th>
-            <th width="30%">Album</th>
-            <th width="10%">Track</th>
-            <th width="40%">Title</th>
+            <th>Artist</th>
+            <th>Album</th>
+            <th>Track</th>
+            <th>Title</th>
           </tr>
           <tr
             :class="['media', activeMedia === media && 'active']"
@@ -40,10 +40,10 @@
             :title="media.fileName"
             @click="onMediaClick(media)"
           >
-            <td width="20%">{{ media.artist }}</td>
-            <td width="30%">{{ media.album }}</td>
-            <td width="10%">{{ media.track }}</td>
-            <td width="40%">{{ media.title }}</td>
+            <td>{{ media.artist }}</td>
+            <td>{{ media.album }}</td>
+            <td>{{ media.track }}</td>
+            <td>{{ media.title }}</td>
           </tr>
           <tr v-if="filteredMedia.length === 0">
             <td colspan="4">No matches.</td>
