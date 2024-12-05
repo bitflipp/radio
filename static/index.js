@@ -4,6 +4,7 @@ createApp({
   setup() {
     const initialized = ref(false);
     const allMedia = ref([]);
+    const audioRef = useTemplateRef("audio");
     const activeMedia = ref();
     const filterTerm = ref("");
     const filteredMedia = computed(() => allMedia.value.filter(filterMedia));
@@ -57,6 +58,16 @@ createApp({
         event.preventDefault();
         focusFilterInput();
       }
+    });
+
+    navigator.mediaSession.setActionHandler("previoustrack", function () {
+      const audio = audioRef.value;
+      audio.currentTime = Math.max(audio.currentTime - 10, 0);
+    });
+
+    navigator.mediaSession.setActionHandler("nexttrack", function () {
+      const audio = audioRef.value;
+      audio.currentTime = Math.min(audio.currentTime + 10, audio.duration);
     });
 
     fetch("/api/media").then((response) => {
