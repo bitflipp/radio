@@ -105,6 +105,11 @@ input {
   width: 100%;
   border: var(--border);
   box-shadow: var(--box-shadow);
+
+  &:focus {
+    outline: none;
+    background: var(--color-primary-light);
+  }
 }
 
 @keyframes spinner {
