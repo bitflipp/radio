@@ -18,7 +18,7 @@ createApp({
         return true;
       }
       const mediaTermLower = (media.artist + media.album + media.title).toLocaleLowerCase();
-      return mediaTermLower.includes(filterTerm.value);
+      return mediaTermLower.includes(filterTermLower);
     }
 
     function focusFilterInput() {
