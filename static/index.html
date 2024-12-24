@@ -13,7 +13,6 @@
         <audio
           controls
           :autoplay="!!activeMedia"
-          ref="audio"
           :src="activeMedia && ('/media/' + activeMedia.fileName)"
           @ended="activateNextMedia"
         />

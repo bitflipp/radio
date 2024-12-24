@@ -4,7 +4,6 @@ createApp({
   setup() {
     const initialized = ref(false);
     const allMedia = ref([]);
-    const audioRef = useTemplateRef("audio");
     const activeMedia = ref();
     const filterTerm = ref("");
     const filteredMedia = computed(() => allMedia.value.filter(filterMedia));
@@ -18,25 +17,24 @@ createApp({
       if (!filterTermLower) {
         return true;
       }
-      const mediaTermLower = (
-        media.artist +
-        media.album +
-        media.title
-      ).toLocaleLowerCase();
+      const mediaTermLower = (media.artist + media.album + media.title).toLocaleLowerCase();
       return mediaTermLower.includes(filterTerm.value);
     }
 
     function focusFilterInput() {
-      filterInputRef.value.focus();
-      filterInputRef.value.select();
+      const filterInput = filterInputRef.value;
+      filterInput.focus();
+      filterInput.select();
     }
 
     function activateNextMedia() {
       const index = filteredMedia.value.indexOf(activeMedia.value);
-      activeMedia.value =
-        filteredMedia.value[
-          index < filteredMedia.value.length - 1 ? index + 1 : 0
-        ];
+      activeMedia.value = filteredMedia.value[index < filteredMedia.value.length - 1 ? index + 1 : 0];
+    }
+
+    function activatePreviousMedia() {
+      const index = filteredMedia.value.indexOf(activeMedia.value);
+      activeMedia.value = filteredMedia.value[index > 0 ? index - 1 : filteredMedia.value.length - 1];
     }
 
     function onMediaClick(media) {
@@ -45,11 +43,13 @@ createApp({
     }
 
     function onFilterInputKeyDown(event) {
-      if (event.key === "Enter") {
-        activateNextMedia();
-      }
-      if (event.key === "Escape") {
-        filterTerm.value = "";
+      switch (event.key) {
+        case "Enter":
+          activateNextMedia();
+          break;
+        case "Escape":
+          filterTerm.value = "";
+          break;
       }
     }
 
@@ -60,15 +60,8 @@ createApp({
       }
     });
 
-    navigator.mediaSession.setActionHandler("previoustrack", function () {
-      const audio = audioRef.value;
-      audio.currentTime = Math.max(audio.currentTime - 10, 0);
-    });
-
-    navigator.mediaSession.setActionHandler("nexttrack", function () {
-      const audio = audioRef.value;
-      audio.currentTime = Math.min(audio.currentTime + 10, audio.duration);
-    });
+    navigator.mediaSession.setActionHandler("previoustrack", activatePreviousMedia);
+    navigator.mediaSession.setActionHandler("nexttrack", activateNextMedia);
 
     fetch("/api/media").then((response) => {
       response.json().then((data) => (allMedia.value = data));
