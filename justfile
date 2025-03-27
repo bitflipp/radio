@@ -10,7 +10,7 @@ dist: clean
 	mkdir dist
 	go build -o dist/radio
 
-upgrade:
+update:
 	go get -u ./...
 	go mod tidy
 
