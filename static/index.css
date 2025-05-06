@@ -54,10 +54,7 @@ table {
 
   tr {
     &.media {
-      &.active {
-        font-weight: bold;
-      }
-
+      &.active,
       &:hover {
         cursor: pointer;
         background: var(--color-primary-light);
