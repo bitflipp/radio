@@ -12,18 +12,14 @@
       <div class="audio">
         <audio
           controls
+          ref="audio"
           :autoplay="!!activeMedia"
           :src="activeMedia && ('/media/' + activeMedia.fileName)"
           @ended="activateNextMedia"
         />
       </div>
       <div class="filter">
-        <input
-          type="text"
-          v-model="filterTerm"
-          ref="filterInput"
-          @keydown="onFilterInputKeyDown"
-        />
+        <input type="text" v-model="filterTerm" ref="filterInput" @keydown="onFilterInputKeyDown" />
       </div>
       <div class="media">
         <table>
@@ -32,6 +28,7 @@
             <th>Album</th>
             <th>Track</th>
             <th>Title</th>
+            <th>Segments</th>
           </tr>
           <tr
             :class="['media', activeMedia === media && 'active']"
@@ -43,9 +40,14 @@
             <td>{{ media.album }}</td>
             <td>{{ media.track }}</td>
             <td>{{ media.title }}</td>
+            <td class="no-padding">
+              <a v-for="segment of parseSegments(media)" @click.stop="onSegmentClick(media, segment)">
+                {{segment.timestamp}} – {{segment.title}}
+              </a>
+            </td>
           </tr>
           <tr v-if="filteredMedia.length === 0">
-            <td colspan="4">No matches.</td>
+            <td colspan="5">No matches.</td>
           </tr>
         </table>
       </div>

@@ -8,6 +8,7 @@ createApp({
     const filterTerm = ref("");
     const filteredMedia = computed(() => allMedia.value.filter(filterMedia));
     const filterInputRef = useTemplateRef("filterInput");
+    const audioRef = useTemplateRef("audio");
 
     function filterMedia(media) {
       if (media === activeMedia.value) {
@@ -17,7 +18,7 @@ createApp({
       if (!filterTermLower) {
         return true;
       }
-      const mediaTermLower = (media.artist + media.album + media.title).toLocaleLowerCase();
+      const mediaTermLower = (media.artist + media.album + media.title + media.comment).toLocaleLowerCase();
       return mediaTermLower.includes(filterTermLower);
     }
 
@@ -37,8 +38,28 @@ createApp({
       activeMedia.value = filteredMedia.value[index > 0 ? index - 1 : filteredMedia.value.length - 1];
     }
 
+    function timestampToSeconds(timestamp) {
+      return timestamp
+        .split(":")
+        .reverse()
+        .reduce((a, p, i) => a + p * 60 ** i, 0);
+    }
+
+    function parseSegments(media) {
+      const segments = [];
+      const comment = media.comment || "";
+      if (!comment) {
+        return segments;
+      }
+      for (const segment of comment.split("\n")) {
+        const [timestamp, title] = segment.split("\t");
+        segments.push({ timestamp, title });
+      }
+      return segments;
+    }
+
     function onMediaClick(media) {
-      activeMedia.value = activeMedia.value === media ? undefined : media;
+      activeMedia.value = media;
       focusFilterInput();
     }
 
@@ -51,6 +72,13 @@ createApp({
           filterTerm.value = "";
           break;
       }
+    }
+
+    function onSegmentClick(media, segment) {
+      activeMedia.value = media;
+      nextTick(() => {
+        audioRef.value.currentTime = timestampToSeconds(segment.timestamp);
+      });
     }
 
     document.addEventListener("keydown", (event) => {
@@ -75,8 +103,10 @@ createApp({
       activeMedia,
       filterTerm,
       activateNextMedia,
+      parseSegments,
       onMediaClick,
       onFilterInputKeyDown,
+      onSegmentClick,
     };
   },
 }).mount("body");

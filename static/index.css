@@ -87,6 +87,24 @@ table {
     &:last-child {
       width: 99%;
     }
+
+    &.no-padding {
+      padding: 0;
+    }
+
+    a {
+      display: block;
+      border-bottom: var(--border);
+      padding: 5px;
+
+      &:last-child {
+        border-bottom: 0;
+      }
+
+      &:hover {
+        background: var(--color-background);
+      }
+    }
   }
 }
 

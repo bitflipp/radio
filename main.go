@@ -30,6 +30,7 @@ type media struct {
 	Title    string `json:"title"`
 	Track    int    `json:"track"`
 	FileName string `json:"fileName"`
+	Comment  string `json:"comment"`
 }
 
 func readMedia() ([]media, error) {
@@ -55,6 +56,7 @@ func readMedia() ([]media, error) {
 			Title:    t.Title(),
 			Track:    d,
 			FileName: f.Name(),
+			Comment:  t.Comment(),
 		}
 		mf.Close()
 	}
