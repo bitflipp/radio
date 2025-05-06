@@ -76,8 +76,10 @@ createApp({
 
     function onSegmentClick(media, segment) {
       activeMedia.value = media;
+      focusFilterInput();
       nextTick(() => {
         audioRef.value.currentTime = timestampToSeconds(segment.timestamp);
+        audioRef.value.play();
       });
     }
 
