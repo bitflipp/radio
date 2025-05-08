@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
   <head>
     <title>Radio Go Go</title>
     <link rel="stylesheet" href="/index.css" />
     <link rel="icon" type="image/svg" href="/favicon.svg" />
-    <script type="module" src="/index.js" defer></script>
+    <script type="module" src="/index.js"></script>
   </head>
   <body>
     <div class="spinner" v-if="!initialized"></div>
@@ -16,7 +16,7 @@
           :autoplay="!!activeMedia"
           :src="activeMedia && ('/media/' + activeMedia.fileName)"
           @ended="activateNextMedia"
-        />
+        ></audio>
       </div>
       <div class="filter">
         <input type="text" v-model="filterTerm" ref="filterInput" @keydown="onFilterInputKeyDown" />

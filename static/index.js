@@ -60,7 +60,6 @@ createApp({
 
     function onMediaClick(media) {
       activeMedia.value = media;
-      focusFilterInput();
     }
 
     function onFilterInputKeyDown(event) {
@@ -76,7 +75,6 @@ createApp({
 
     function onSegmentClick(media, segment) {
       activeMedia.value = media;
-      focusFilterInput();
       nextTick(() => {
         audioRef.value.currentTime = timestampToSeconds(segment.timestamp);
         audioRef.value.play();
