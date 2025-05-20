@@ -47,16 +47,20 @@ func readMedia() ([]media, error) {
 		}
 		t, err := tag.ReadFrom(mf)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read tags from media file: %w", err)
-		}
-		d, _ := t.Track()
-		ms[i] = media{
-			Album:    t.Album(),
-			Artist:   t.Artist(),
-			Title:    t.Title(),
-			Track:    d,
-			FileName: f.Name(),
-			Comment:  t.Comment(),
+			ms[i] = media{
+				Title:    fmt.Sprintf("[%s]", f.Name()),
+				FileName: f.Name(),
+			}
+		} else {
+			d, _ := t.Track()
+			ms[i] = media{
+				Album:    t.Album(),
+				Artist:   t.Artist(),
+				Title:    t.Title(),
+				Track:    d,
+				FileName: f.Name(),
+				Comment:  t.Comment(),
+			}
 		}
 		mf.Close()
 	}
