@@ -18,5 +18,5 @@ update:
 	go get -u ./...
 	go mod tidy
 
-deploy: dist
+upload: dist
 	rsync -av dist/ radio@phinau.de:/home/radio
