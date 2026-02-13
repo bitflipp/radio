@@ -18,5 +18,7 @@ update:
 	go get -u ./...
 	go mod tidy
 
-upload: dist
-	rsync -av dist/ radio@phinau.de:/home/radio
+deploy: dist
+	rsync -av dist/ root@phinau.de:/home/radio
+	ssh root@phinau.de "chown -R radio: /home/radio"
+	ssh root@phinau.de "systemctl restart radio"
