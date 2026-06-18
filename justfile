@@ -19,6 +19,5 @@ update:
 	go mod tidy
 
 deploy: dist
-	rsync -av dist/ root@phinau.de:/home/radio
-	ssh root@phinau.de "chown -R radio: /home/radio"
-	ssh root@phinau.de "systemctl restart radio"
+	scp -O dist/radio deploy@phinau.de:/tmp
+	ssh -t deploy@phinau.de "sudo systemctl stop radio && sudo mv /tmp/radio /home/radio && sudo chown -R radio: /home/radio && sudo systemctl start radio"

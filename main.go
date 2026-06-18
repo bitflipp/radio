@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	address   = ":1984"
+	address   = "127.0.0.1:1984"
 	mediaRoot = "./media"
 )
 
