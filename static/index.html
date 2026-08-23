@@ -48,7 +48,7 @@
               <td @click.stop><input type="text" v-model="editDraft.album" /></td>
               <td @click.stop><input type="number" min="0" v-model.number="editDraft.track" /></td>
               <td @click.stop><input type="text" v-model="editDraft.title" /></td>
-              <td class="segments no-padding" @click.stop><textarea v-model="editDraft.comment"></textarea></td>
+              <td class="segments" @click.stop><textarea v-model="editDraft.comment"></textarea></td>
               <td class="actions" @click.stop>
                 <a @click="saveEdit(media)">Speichern</a>
                 <a @click="cancelEdit">Abbrechen</a>
