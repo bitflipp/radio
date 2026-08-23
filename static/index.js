@@ -58,7 +58,7 @@ createApp({
         return segments;
       }
       for (const segment of comment.split("\n")) {
-        const [timestamp, title] = segment.split("\t");
+        const [timestamp, title] = segment.split(";");
         segments.push({ timestamp, title });
       }
       return segments;
