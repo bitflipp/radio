@@ -4,19 +4,26 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
+	"strconv"
+	"strings"
 
+	"github.com/bogem/id3v2/v2"
 	"github.com/dhowden/tag"
 )
 
 const (
-	address   = "127.0.0.1:1984"
-	mediaRoot = "./media"
+	address       = "127.0.0.1:1984"
+	mediaRoot     = "./media"
+	maxUploadSize = 100 << 20 // 100 MiB per request
 )
 
 var (
@@ -33,6 +40,31 @@ type media struct {
 	Comment  string `json:"comment"`
 }
 
+func readSingleMedia(fileName string) (media, error) {
+	mfp := path.Join(mediaRoot, fileName)
+	mf, err := os.Open(mfp)
+	if err != nil {
+		return media{}, fmt.Errorf("failed to open media file: %w", err)
+	}
+	defer mf.Close()
+	t, err := tag.ReadFrom(mf)
+	if err != nil {
+		return media{
+			Title:    fmt.Sprintf("[%s]", fileName),
+			FileName: fileName,
+		}, nil
+	}
+	d, _ := t.Track()
+	return media{
+		Album:    t.Album(),
+		Artist:   t.Artist(),
+		Title:    t.Title(),
+		Track:    d,
+		FileName: fileName,
+		Comment:  t.Comment(),
+	}, nil
+}
+
 func readMedia() ([]media, error) {
 	fs, err := os.ReadDir(mediaRoot)
 	if err != nil {
@@ -40,29 +72,11 @@ func readMedia() ([]media, error) {
 	}
 	ms := make([]media, len(fs))
 	for i, f := range fs {
-		mfp := path.Join(mediaRoot, f.Name())
-		mf, err := os.Open(mfp)
+		m, err := readSingleMedia(f.Name())
 		if err != nil {
-			return nil, fmt.Errorf("failed to open media file: %w", err)
+			return nil, err
 		}
-		t, err := tag.ReadFrom(mf)
-		if err != nil {
-			ms[i] = media{
-				Title:    fmt.Sprintf("[%s]", f.Name()),
-				FileName: f.Name(),
-			}
-		} else {
-			d, _ := t.Track()
-			ms[i] = media{
-				Album:    t.Album(),
-				Artist:   t.Artist(),
-				Title:    t.Title(),
-				Track:    d,
-				FileName: f.Name(),
-				Comment:  t.Comment(),
-			}
-		}
-		mf.Close()
+		ms[i] = m
 	}
 	sort.Slice(ms, func(i, j int) bool {
 		ti := ms[i].Artist + ms[i].Album
@@ -85,8 +99,151 @@ func handleAPIMedia(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(ms)
 }
 
+func uniqueFileName(name string) string {
+	ext := filepath.Ext(name)
+	base := strings.TrimSuffix(name, ext)
+	candidate := name
+	for i := 2; ; i++ {
+		if _, err := os.Stat(path.Join(mediaRoot, candidate)); os.IsNotExist(err) {
+			return candidate
+		}
+		candidate = fmt.Sprintf("%s-%d%s", base, i, ext)
+	}
+}
+
+func saveUploadedFile(fh *multipart.FileHeader) (media, error) {
+	name := filepath.Base(filepath.Clean(fh.Filename))
+	if strings.ToLower(filepath.Ext(name)) != ".mp3" {
+		return media{}, fmt.Errorf("not an mp3 file")
+	}
+
+	src, err := fh.Open()
+	if err != nil {
+		return media{}, fmt.Errorf("failed to open upload: %w", err)
+	}
+	defer src.Close()
+
+	var sniff [512]byte
+	n, _ := io.ReadFull(src, sniff[:])
+	if ct := http.DetectContentType(sniff[:n]); ct != "audio/mpeg" {
+		return media{}, fmt.Errorf("does not look like an mp3 file")
+	}
+	if _, err := src.Seek(0, io.SeekStart); err != nil {
+		return media{}, fmt.Errorf("failed to rewind upload: %w", err)
+	}
+
+	destName := uniqueFileName(name)
+	dst, err := os.OpenFile(path.Join(mediaRoot, destName), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+	if err != nil {
+		return media{}, fmt.Errorf("failed to create file: %w", err)
+	}
+	defer dst.Close()
+	if _, err := io.Copy(dst, src); err != nil {
+		os.Remove(path.Join(mediaRoot, destName))
+		return media{}, fmt.Errorf("failed to write file: %w", err)
+	}
+
+	return readSingleMedia(destName)
+}
+
+func handleAPIMediaUpload(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		log.Printf("failed to parse upload: %s", err)
+		http.Error(w, "invalid upload", http.StatusBadRequest)
+		return
+	}
+	files := r.MultipartForm.File["files"]
+	if len(files) == 0 {
+		http.Error(w, "no files provided", http.StatusBadRequest)
+		return
+	}
+	uploaded := make([]media, 0, len(files))
+	for _, fh := range files {
+		m, err := saveUploadedFile(fh)
+		if err != nil {
+			log.Printf("failed to save uploaded file %q: %s", fh.Filename, err)
+			http.Error(w, fmt.Sprintf("%s: %s", fh.Filename, err), http.StatusBadRequest)
+			return
+		}
+		uploaded = append(uploaded, m)
+	}
+	json.NewEncoder(w).Encode(uploaded)
+}
+
+type mediaPatch struct {
+	Artist  string `json:"artist"`
+	Album   string `json:"album"`
+	Title   string `json:"title"`
+	Track   int    `json:"track"`
+	Comment string `json:"comment"`
+}
+
+func writeTags(filePath string, p mediaPatch) error {
+	t, err := id3v2.Open(filePath, id3v2.Options{Parse: true})
+	if err != nil {
+		return fmt.Errorf("failed to open tag: %w", err)
+	}
+	defer t.Close()
+
+	t.SetArtist(p.Artist)
+	t.SetAlbum(p.Album)
+	t.SetTitle(p.Title)
+	t.AddTextFrame(t.CommonID("Track number/Position in set"), t.DefaultEncoding(), strconv.Itoa(p.Track))
+
+	t.DeleteFrames(t.CommonID("Comments"))
+	if p.Comment != "" {
+		t.AddCommentFrame(id3v2.CommentFrame{
+			Encoding:    id3v2.EncodingUTF8,
+			Language:    "eng",
+			Description: "",
+			Text:        p.Comment,
+		})
+	}
+
+	return t.Save()
+}
+
+func handleAPIMediaPatch(w http.ResponseWriter, r *http.Request) {
+	fileName := r.PathValue("fileName")
+	if fileName == "" || fileName != filepath.Base(fileName) || fileName == ".." {
+		http.Error(w, "invalid file name", http.StatusBadRequest)
+		return
+	}
+	filePath := path.Join(mediaRoot, fileName)
+	if _, err := os.Stat(filePath); err != nil {
+		http.Error(w, "file not found", http.StatusNotFound)
+		return
+	}
+
+	var p mediaPatch
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := writeTags(filePath, p); err != nil {
+		log.Printf("failed to write tags for %q: %s", fileName, err)
+		http.Error(w, "failed to write tags", http.StatusInternalServerError)
+		return
+	}
+
+	m, err := readSingleMedia(fileName)
+	if err != nil {
+		log.Printf("failed to re-read media after tag write: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(m)
+}
+
 func main() {
-	http.HandleFunc("/api/media", handleAPIMedia)
+	if err := os.MkdirAll(mediaRoot, 0o755); err != nil {
+		log.Fatalf("failed to ensure media directory: %s", err)
+	}
+	http.HandleFunc("GET /api/media", handleAPIMedia)
+	http.HandleFunc("POST /api/media", handleAPIMediaUpload)
+	http.HandleFunc("PATCH /api/media/{fileName}", handleAPIMediaPatch)
 	http.Handle("/media/", http.StripPrefix("/media/", http.FileServer(http.Dir(mediaRoot))))
 	sfs, err := fs.Sub(staticFS, "static")
 	if err != nil {

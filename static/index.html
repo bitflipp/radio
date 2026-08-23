@@ -21,6 +21,13 @@
       <div class="filter">
         <input type="text" v-model="filterTerm" ref="filterInput" @keydown="onFilterInputKeyDown" />
       </div>
+      <div class="upload" :class="uploading && 'busy'" @dragover.prevent @dragenter.prevent @drop.prevent="onDrop">
+        <label>
+          <input type="file" accept=".mp3,audio/mpeg" multiple ref="uploadInput" @change="onUploadInputChange" />
+          {{ uploading ? "Wird hochgeladen…" : "MP3-Dateien hierher ziehen oder auswählen" }}
+        </label>
+      </div>
+      <div class="error" v-if="uploadError">{{ uploadError }}</div>
       <div class="media">
         <table>
           <tr>
@@ -28,28 +35,44 @@
             <th>Album</th>
             <th>Track</th>
             <th>Title</th>
-            <th>Segments</th>
+            <th class="segments">Segments</th>
+            <th>Aktionen</th>
           </tr>
           <tr
             :class="['media', activeMedia === media && 'active']"
             v-for="media in filteredMedia"
             @click="onMediaClick(media)"
           >
-            <td>{{ media.artist }}</td>
-            <td>{{ media.album }}</td>
-            <td>{{ media.track }}</td>
-            <td>{{ media.title }}</td>
-            <td class="no-padding">
-              <a v-for="segment of parseSegments(media)" @click.stop="onSegmentClick(media, segment)">
-                {{segment.timestamp}} – {{segment.title}}
-              </a>
-            </td>
+            <template v-if="editingFileName === media.fileName">
+              <td @click.stop><input type="text" v-model="editDraft.artist" /></td>
+              <td @click.stop><input type="text" v-model="editDraft.album" /></td>
+              <td @click.stop><input type="number" min="0" v-model.number="editDraft.track" /></td>
+              <td @click.stop><input type="text" v-model="editDraft.title" /></td>
+              <td class="segments no-padding" @click.stop><textarea v-model="editDraft.comment"></textarea></td>
+              <td class="actions" @click.stop>
+                <a @click="saveEdit(media)">Speichern</a>
+                <a @click="cancelEdit">Abbrechen</a>
+              </td>
+            </template>
+            <template v-else>
+              <td>{{ media.artist }}</td>
+              <td>{{ media.album }}</td>
+              <td>{{ media.track }}</td>
+              <td>{{ media.title }}</td>
+              <td class="segments no-padding">
+                <a v-for="segment of parseSegments(media)" @click.stop="onSegmentClick(media, segment)">
+                  {{segment.timestamp}} – {{segment.title}}
+                </a>
+              </td>
+              <td class="actions"><a @click.stop="startEdit(media)">Bearbeiten</a></td>
+            </template>
           </tr>
           <tr v-if="filteredMedia.length === 0">
-            <td colspan="5">No matches.</td>
+            <td colspan="6">No matches.</td>
           </tr>
         </table>
       </div>
+      <div class="error" v-if="editError">{{ editError }}</div>
     </div>
   </body>
 </html>
