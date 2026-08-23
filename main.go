@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/sha256"
 	"embed"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -99,18 +101,6 @@ func handleAPIMedia(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(ms)
 }
 
-func uniqueFileName(name string) string {
-	ext := filepath.Ext(name)
-	base := strings.TrimSuffix(name, ext)
-	candidate := name
-	for i := 2; ; i++ {
-		if _, err := os.Stat(path.Join(mediaRoot, candidate)); os.IsNotExist(err) {
-			return candidate
-		}
-		candidate = fmt.Sprintf("%s-%d%s", base, i, ext)
-	}
-}
-
 func saveUploadedFile(fh *multipart.FileHeader) (media, error) {
 	name := filepath.Base(filepath.Clean(fh.Filename))
 	if strings.ToLower(filepath.Ext(name)) != ".mp3" {
@@ -132,9 +122,23 @@ func saveUploadedFile(fh *multipart.FileHeader) (media, error) {
 		return media{}, fmt.Errorf("failed to rewind upload: %w", err)
 	}
 
-	destName := uniqueFileName(name)
+	// The file name is a content hash, not the uploaded name: it's an opaque identifier that
+	// never needs to change, since tag edits rewrite the file in place rather than re-uploading
+	// it. A hash collision means byte-identical content was already uploaded.
+	h := sha256.New()
+	if _, err := io.Copy(h, src); err != nil {
+		return media{}, fmt.Errorf("failed to hash upload: %w", err)
+	}
+	if _, err := src.Seek(0, io.SeekStart); err != nil {
+		return media{}, fmt.Errorf("failed to rewind upload: %w", err)
+	}
+
+	destName := hex.EncodeToString(h.Sum(nil)) + ".mp3"
 	dst, err := os.OpenFile(path.Join(mediaRoot, destName), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if err != nil {
+		if os.IsExist(err) {
+			return media{}, fmt.Errorf("duplicate file already exists")
+		}
 		return media{}, fmt.Errorf("failed to create file: %w", err)
 	}
 	defer dst.Close()

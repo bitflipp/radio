@@ -44,4 +44,8 @@ No test suite, linter, or formatter config exists for Go. `static/.prettierrc` c
 
 - Everything (album art aside) is derived from file tags read on every `/api/media` request — there is no
   database and no caching layer.
+- `media/` file names are opaque: `saveUploadedFile` names each upload after the sha256 hash of its bytes
+  (`<hash>.mp3`), not the uploaded name. They carry no meaning and are never renamed — tag edits (`writeTags`)
+  rewrite the file in place — and a byte-identical re-upload is rejected as a duplicate. Existing files predating
+  this scheme keep whatever name they already had.
 - The frontend is served in German (`<html lang="de">`); keep that if adding UI text.
