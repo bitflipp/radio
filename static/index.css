@@ -110,10 +110,6 @@ table {
 
     white-space: nowrap;
 
-    &.segments {
-      width: 99%;
-    }
-
     &.no-padding {
       padding: 0;
     }
@@ -132,10 +128,7 @@ table {
       }
     }
 
-    &.actions a {
-      display: inline-block;
-      border-bottom: 0;
-
+    &.actions button {
       &:not(:last-child) {
         margin-right: 5px;
       }
@@ -155,7 +148,7 @@ audio {
 
 input,
 textarea {
-  padding: 10px;
+  padding: 5px;
   width: 100%;
   border: var(--border);
   box-shadow: var(--box-shadow);
@@ -163,6 +156,10 @@ textarea {
   &:focus {
     outline: none;
     background: var(--color-primary-light);
+  }
+
+  &[type="number"] {
+    min-width: 75px;
   }
 }
 
