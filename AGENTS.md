@@ -14,6 +14,9 @@ HTML5 `<audio>` element.
 - `just dist` — clean and build a release binary to `dist/radio`.
 - `just clean` — remove `dist/`.
 - `just download` — rsync `media/` down from the production host (`radio@phinau.de:/home/radio/media/`) for local testing. `media/` is gitignored.
+- `just cbr [-n] [-b kbit/s] [files...]` — re-encode VBR MP3s (default `media/*.mp3`) to CBR in place via `ffmpeg`
+  (`cmd/cbr`), so browser seeking to timestamps is exact. Original ID3 tags are copied byte for byte; CBR files are
+  skipped; `-n` is a dry run.
 - `just update` — `go get -u ./...` then `go mod tidy`.
 - `just deploy` — build and ship the binary to the production host via `scp`/`ssh`, restarting the `radio` systemd service.
 

@@ -21,3 +21,6 @@ update:
 deploy: dist
 	scp -O dist/radio deploy@phinau.de:/tmp
 	ssh -t deploy@phinau.de "sudo systemctl stop radio && sudo mv /tmp/radio /home/radio && sudo chown -R radio: /home/radio && sudo systemctl start radio"
+
+cbr *args:
+	go run ./cmd/cbr {{args}}
