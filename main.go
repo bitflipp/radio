@@ -34,12 +34,13 @@ var (
 )
 
 type media struct {
-	Album    string `json:"album"`
-	Artist   string `json:"artist"`
-	Title    string `json:"title"`
-	Track    int    `json:"track"`
-	FileName string `json:"fileName"`
-	Comment  string `json:"comment"`
+	Album       string `json:"album"`
+	AlbumArtist string `json:"albumArtist"`
+	Artist      string `json:"artist"`
+	Title       string `json:"title"`
+	Track       int    `json:"track"`
+	FileName    string `json:"fileName"`
+	Comment     string `json:"comment"`
 }
 
 func readSingleMedia(fileName string) (media, error) {
@@ -58,12 +59,13 @@ func readSingleMedia(fileName string) (media, error) {
 	}
 	d, _ := t.Track()
 	return media{
-		Album:    t.Album(),
-		Artist:   t.Artist(),
-		Title:    t.Title(),
-		Track:    d,
-		FileName: fileName,
-		Comment:  t.Comment(),
+		Album:       t.Album(),
+		AlbumArtist: t.AlbumArtist(),
+		Artist:      t.Artist(),
+		Title:       t.Title(),
+		Track:       d,
+		FileName:    fileName,
+		Comment:     t.Comment(),
 	}, nil
 }
 
@@ -81,14 +83,26 @@ func readMedia() ([]media, error) {
 		ms[i] = m
 	}
 	sort.Slice(ms, func(i, j int) bool {
-		ti := ms[i].Artist + ms[i].Album
-		tj := ms[j].Artist + ms[j].Album
-		if ti == tj {
+		ai, aj := ms[i].albumKey(), ms[j].albumKey()
+		if ai != aj {
+			return ai < aj
+		}
+		if ms[i].Track != ms[j].Track {
 			return ms[i].Track < ms[j].Track
 		}
-		return ti < tj
+		return ms[i].Artist < ms[j].Artist
 	})
 	return ms, nil
+}
+
+// albumKey identifies the album a track belongs to: the album artist (falling back to the track
+// artist) plus the album name, so compilations with per-track artists stay together.
+func (m media) albumKey() string {
+	artist := m.AlbumArtist
+	if artist == "" {
+		artist = m.Artist
+	}
+	return artist + "\x00" + m.Album
 }
 
 func handleAPIMedia(w http.ResponseWriter, r *http.Request) {
@@ -176,11 +190,12 @@ func handleAPIMediaUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 type mediaPatch struct {
-	Artist  string `json:"artist"`
-	Album   string `json:"album"`
-	Title   string `json:"title"`
-	Track   int    `json:"track"`
-	Comment string `json:"comment"`
+	Artist      string `json:"artist"`
+	AlbumArtist string `json:"albumArtist"`
+	Album       string `json:"album"`
+	Title       string `json:"title"`
+	Track       int    `json:"track"`
+	Comment     string `json:"comment"`
 }
 
 func writeTags(filePath string, p mediaPatch) error {
@@ -192,6 +207,11 @@ func writeTags(filePath string, p mediaPatch) error {
 
 	t.SetArtist(p.Artist)
 	t.SetAlbum(p.Album)
+	albumArtistID := t.CommonID("Band/Orchestra/Accompaniment")
+	t.DeleteFrames(albumArtistID)
+	if p.AlbumArtist != "" {
+		t.AddTextFrame(albumArtistID, t.DefaultEncoding(), p.AlbumArtist)
+	}
 	t.SetTitle(p.Title)
 	t.AddTextFrame(t.CommonID("Track number/Position in set"), t.DefaultEncoding(), strconv.Itoa(p.Track))
 

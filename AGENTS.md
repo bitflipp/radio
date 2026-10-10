@@ -24,7 +24,7 @@ No test suite, linter, or formatter config exists for Go. `static/.prettierrc` c
 
 - **`main.go`** — the entire backend, single file:
   - `readMedia()` scans `mediaRoot` (`./media`), reads tags from each file via `github.com/dhowden/tag`, and sorts
-    results by `Artist+Album` then track number. Files with unreadable tags still get an entry
+    results by album key (album artist, falling back to artist, + album) then track number. Files with unreadable tags still get an entry
     (`Title: "[filename]"`) rather than being skipped.
   - `GET /api/media` returns the JSON array of `media` structs.
   - `GET /media/<file>` serves raw audio files straight from `mediaRoot` via `http.FileServer`.
@@ -33,8 +33,10 @@ No test suite, linter, or formatter config exists for Go. `static/.prettierrc` c
 - **`static/`** — the frontend, no build step, no npm/package.json. `vue.js` is a vendored copy of Vue loaded as
   an ES module directly in the browser by `index.html`. All app logic lives in `index.js`'s single `setup()`
   function (Vue Composition API), rendering into `index.html`'s inline template.
-  - The `comment` ID3 field doubles as a segment/chapter list: each line is `HH:MM:SS\t<title>`, parsed by
+  - The `comment` ID3 field doubles as a segment/chapter list: each line is `HH:MM:SS;<title>`, parsed by
     `parseSegments()` and rendered as clickable timestamps that seek the `<audio>` element (`onSegmentClick`).
+  - The track list is grouped into albums by the same album key the backend sorts by, so compilations stay together
+    when their tracks share an album artist (TPE2). Mixed-artist groups show each track's artist.
   - `filteredMedia` is a case-insensitive substring filter over artist+album+title+comment; the currently active
     track is always kept visible regardless of the filter. Ctrl+F focuses the filter input; Enter in the filter
     advances to the next match; Escape clears it.

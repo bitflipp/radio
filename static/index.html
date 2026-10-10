@@ -1,78 +1,223 @@
 <!DOCTYPE html>
 <html lang="de">
   <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0e0b14" />
     <title>Radio Go Go</title>
     <link rel="stylesheet" href="/index.css" />
     <link rel="icon" type="image/svg" href="/favicon.svg" />
     <script type="module" src="/index.js"></script>
   </head>
   <body>
-    <div class="spinner" v-if="!initialized"></div>
-    <div class="radio" :class="initialized && 'initialized'">
-      <div class="audio">
-        <audio
-          controls
-          ref="audio"
-          :autoplay="!!activeMedia"
-          :src="activeMedia && ('/media/' + activeMedia.fileName)"
-          @ended="activateNextMedia"
-        ></audio>
-      </div>
-      <div class="filter">
-        <input type="text" v-model="filterTerm" ref="filterInput" @keydown="onFilterInputKeyDown" />
-      </div>
-      <div class="upload" :class="uploading && 'busy'" @dragover.prevent @dragenter.prevent @drop.prevent="onDrop">
-        <label>
+    <div class="boot" v-if="!initialized">
+      <div class="boot-eq"><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+    <div class="app" :class="{ ready: initialized, playing }">
+      <audio
+        ref="audio"
+        :autoplay="!!activeMedia"
+        :src="activeMedia && ('/media/' + activeMedia.fileName)"
+        @ended="activateNextMedia"
+        @play="playing = true"
+        @pause="playing = false"
+        @timeupdate="onTimeUpdate"
+        @durationchange="onDurationChange"
+        @loadedmetadata="onDurationChange"
+      ></audio>
+
+      <header class="topbar">
+        <div class="brand">
+          <span class="on-air"><i></i>On Air</span>
+          <h1>Radio <em>Go Go</em></h1>
+        </div>
+        <div class="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Künstler, Album, Titel, Segment …"
+            v-model="filterTerm"
+            ref="filterInput"
+            @keydown="onFilterInputKeyDown"
+          />
+          <span class="search-count" v-if="filterTerm">{{ filteredMedia.length }} / {{ mediaCount }}</span>
+          <kbd v-else>Strg F</kbd>
+        </div>
+        <label class="button upload" :class="{ busy: uploading }">
           <input type="file" accept=".mp3,audio/mpeg" multiple ref="uploadInput" @change="onUploadInputChange" />
-          {{ uploading ? "Wird hochgeladen…" : "MP3-Dateien droppen oder auswählen" }}
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16" /></svg>
+          <span>{{ uploading ? "Lädt hoch …" : "Hochladen" }}</span>
         </label>
+      </header>
+
+      <main class="library">
+        <section class="album" v-for="group in groups" :key="group.key">
+          <div class="album-head">
+            <div class="cover" :style="coverStyle(group.artist, group.album)">
+              <span>{{ initials(group.album || group.artist) }}</span>
+            </div>
+            <div class="album-meta">
+              <h2>{{ group.album || "Ohne Album" }}</h2>
+              <p>
+                {{ group.mixed && !group.items[0].albumArtist ? "Verschiedene Künstler" : group.artist || "Unbekannt" }}
+                <span class="dot">·</span> {{ group.items.length }} Titel
+              </p>
+            </div>
+          </div>
+
+          <ol class="tracks">
+            <li
+              v-for="media in group.items"
+              :key="media.fileName"
+              :class="['track', { active: activeMedia === media, editing: editingFileName === media.fileName }]"
+              @click="onMediaClick(media)"
+            >
+              <template v-if="editingFileName === media.fileName">
+                <form class="editor" @click.stop @submit.prevent="saveEdit(media)" @keydown="onEditorKeyDown($event, media)">
+                  <label class="f-artist">Künstler<input type="text" v-model="editDraft.artist" /></label>
+                  <label class="f-album-artist"
+                    >Album-Künstler<input type="text" v-model="editDraft.albumArtist" :placeholder="editDraft.artist"
+                  /></label>
+                  <label class="f-album">Album<input type="text" v-model="editDraft.album" /></label>
+                  <label class="f-track">Nr.<input type="number" min="0" v-model.number="editDraft.track" /></label>
+                  <label class="f-title">Titel<input type="text" v-model="editDraft.title" /></label>
+                  <label class="f-comment"
+                    >Segmente <small>eine Zeile pro Segment: <code>HH:MM:SS;Titel</code></small>
+                    <textarea v-model="editDraft.comment" placeholder="00:00:00;Intro"></textarea>
+                  </label>
+                  <div class="editor-actions">
+                    <small>Strg+Enter speichert · Esc bricht ab</small>
+                    <button type="button" class="button ghost" @click="cancelEdit">Abbrechen</button>
+                    <button type="submit" class="button primary">Speichern</button>
+                  </div>
+                </form>
+              </template>
+              <template v-else>
+                <div class="track-num">
+                  <span class="num">{{ media.track || "–" }}</span>
+                  <span class="eq" v-if="activeMedia === media"><i></i><i></i><i></i></span>
+                  <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+                </div>
+                <div class="track-body">
+                  <div class="track-title">{{ media.title }}</div>
+                  <div class="track-artist" v-if="group.mixed || (media.albumArtist && media.albumArtist !== media.artist)">
+                    {{ media.artist }}
+                  </div>
+                  <div class="segments" v-if="media.comment">
+                    <button
+                      type="button"
+                      v-for="(segment, index) of parseSegments(media)"
+                      :class="['segment', { current: activeMedia === media && currentSegmentIndex === index }]"
+                      @click.stop="onSegmentClick(media, segment)"
+                    >
+                      <span class="ts" v-if="segment.timestamp">{{ segment.timestamp }}</span>{{ segment.title }}
+                    </button>
+                  </div>
+                </div>
+                <button type="button" class="icon-button edit" title="Bearbeiten" @click.stop="startEdit(media)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" />
+                  </svg>
+                </button>
+              </template>
+            </li>
+          </ol>
+        </section>
+
+        <div class="empty" v-if="groups.length === 0">
+          <div class="empty-eq"><span></span><span></span><span></span></div>
+          <template v-if="mediaCount === 0">
+            <h2>Funkstille.</h2>
+            <p>Zieh MP3-Dateien irgendwo ins Fenster, um loszulegen.</p>
+          </template>
+          <template v-else>
+            <h2>Kein Treffer für „{{ filterTerm }}“.</h2>
+            <p>Esc leert die Suche.</p>
+          </template>
+        </div>
+      </main>
+
+      <footer class="player">
+        <div class="seek" :style="{ '--progress': progress + '%' }">
+          <input
+            type="range"
+            min="0"
+            :max="duration || 0"
+            step="any"
+            :value="currentTime"
+            :disabled="!activeMedia"
+            @input="onSeek"
+            aria-label="Position"
+          />
+          <span
+            class="marker"
+            v-for="segment of activeSegments.filter((s) => Number.isFinite(s.seconds))"
+            :style="{ left: (duration ? (segment.seconds / duration) * 100 : 0) + '%' }"
+            :title="segment.timestamp + ' ' + segment.title"
+          ></span>
+        </div>
+        <div class="player-inner">
+          <div class="now">
+            <div class="vinyl" :class="{ spinning: playing }">
+              <div class="label" :style="activeMedia && coverStyle(activeMedia.artist, activeMedia.album)"></div>
+            </div>
+            <div class="now-meta" v-if="activeMedia">
+              <div class="now-title">{{ activeMedia.title }}</div>
+              <div class="now-sub">
+                {{ activeMedia.artist }}<template v-if="activeMedia.album"> — {{ activeMedia.album }}</template>
+              </div>
+              <div class="now-segment" v-if="currentSegmentTitle">▸ {{ currentSegmentTitle }}</div>
+            </div>
+            <div class="now-meta idle" v-else>
+              <div class="now-title">Bereit zum Senden</div>
+              <div class="now-sub">Titel anklicken oder Leertaste drücken</div>
+            </div>
+          </div>
+
+          <div class="controls">
+            <button type="button" class="icon-button" title="Vorheriger Titel" @click="activatePreviousMedia">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M6 5h2v14H6zM20 5v14L9 12z" /></svg>
+            </button>
+            <button type="button" class="play" :title="playing ? 'Pause' : 'Abspielen'" @click="togglePlay">
+              <svg v-if="playing" viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
+              <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M8 5v14l11-7z" /></svg>
+            </button>
+            <button type="button" class="icon-button" title="Nächster Titel" @click="activateNextMedia">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M16 5h2v14h-2zM4 5v14l11-7z" /></svg>
+            </button>
+            <span class="time">{{ formatTime(currentTime) }} <span>/ {{ formatTime(duration) }}</span></span>
+          </div>
+
+          <div class="volume" :style="{ '--progress': volume * 100 + '%' }">
+            <button type="button" class="icon-button" :title="muted ? 'Ton an' : 'Stumm'" @click="muted = !muted">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path class="fill" d="M4 9h4l5-4v14l-5-4H4z" />
+                <path v-if="!muted && volume > 0" d="M16 9a4 4 0 0 1 0 6" />
+                <path v-if="!muted && volume > 0.5" d="M18.5 6.5a8 8 0 0 1 0 11" />
+                <path v-if="muted || volume === 0" d="m16 9 5 6m0-6-5 6" />
+              </svg>
+            </button>
+            <input type="range" min="0" max="1" step="0.01" v-model.number="volume" aria-label="Lautstärke" />
+          </div>
+        </div>
+      </footer>
+
+      <div class="toasts">
+        <div v-for="toast in toasts" :key="toast.id" :class="['toast', toast.kind]" @click="dismissToast(toast)">
+          {{ toast.text }}
+        </div>
       </div>
-      <div class="error" v-if="uploadError">{{ uploadError }}</div>
-      <div class="media">
-        <table>
-          <tr>
-            <th>Artist</th>
-            <th>Album</th>
-            <th>Track</th>
-            <th>Title</th>
-            <th class="segments">Segments</th>
-            <th>Aktionen</th>
-          </tr>
-          <tr
-            :class="['media', activeMedia === media && 'active']"
-            v-for="media in filteredMedia"
-            @click="onMediaClick(media)"
-          >
-            <template v-if="editingFileName === media.fileName">
-              <td @click.stop><input type="text" v-model="editDraft.artist" /></td>
-              <td @click.stop><input type="text" v-model="editDraft.album" /></td>
-              <td @click.stop><input type="number" min="0" v-model.number="editDraft.track" /></td>
-              <td @click.stop><input type="text" v-model="editDraft.title" /></td>
-              <td class="segments" @click.stop><textarea v-model="editDraft.comment"></textarea></td>
-              <td class="actions" @click.stop>
-                <button @click="saveEdit(media)">Speichern</button>
-                <button @click="cancelEdit">Abbrechen</button>
-              </td>
-            </template>
-            <template v-else>
-              <td>{{ media.artist }}</td>
-              <td>{{ media.album }}</td>
-              <td>{{ media.track }}</td>
-              <td>{{ media.title }}</td>
-              <td class="segments no-padding">
-                <a v-for="segment of parseSegments(media)" @click.stop="onSegmentClick(media, segment)">
-                  {{segment.timestamp}} – {{segment.title}}
-                </a>
-              </td>
-              <td class="actions"><button @click.stop="startEdit(media)">Bearbeiten</button></td>
-            </template>
-          </tr>
-          <tr v-if="filteredMedia.length === 0">
-            <td colspan="6">No matches.</td>
-          </tr>
-        </table>
+
+      <div class="dropzone" v-if="draggingFiles">
+        <div class="dropzone-inner">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16" /></svg>
+          <h2>Loslassen zum Hochladen</h2>
+          <p>MP3-Dateien landen direkt in der Bibliothek</p>
+        </div>
       </div>
-      <div class="error" v-if="editError">{{ editError }}</div>
     </div>
   </body>
 </html>
