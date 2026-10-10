@@ -183,6 +183,11 @@ audio {
   &:active {
     transform: scale(0.9);
   }
+
+  &:disabled {
+    opacity: 0.35;
+    pointer-events: none;
+  }
 }
 
 kbd {
@@ -520,14 +525,21 @@ kbd {
   font-size: 13px;
 }
 
-.segments {
+.track-comment {
+  margin-top: 4px;
+  color: var(--text-faint);
+  font-size: 13px;
+  white-space: pre-line;
+}
+
+.chapters {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
 }
 
-.segment {
+.chapter {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -605,12 +617,14 @@ kbd {
     "artist album-artist album-artist"
     "album album track"
     "title title title"
+    "chapters chapters chapters"
     "comment comment comment"
     "actions actions actions";
   gap: 14px;
   padding: 8px;
 
-  label {
+  label,
+  legend {
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -633,7 +647,24 @@ kbd {
   .f-album { grid-area: album; }
   .f-track { grid-area: track; }
   .f-title { grid-area: title; }
+  .f-chapters { grid-area: chapters; }
   .f-comment { grid-area: comment; }
+  .f-comment textarea { min-height: 4em; }
+
+  fieldset {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  legend {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+    padding: 0;
+    margin-bottom: 6px;
+  }
 
   input,
   textarea {
@@ -666,6 +697,59 @@ kbd {
 
   code {
     font-family: var(--mono);
+  }
+}
+
+.chapter-rows {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 6.5em minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Without the "current position" button the remove button takes its column. */
+  li:not(:has(.icon-button + .icon-button)) {
+    grid-template-columns: 6.5em minmax(0, 1fr) auto;
+  }
+
+  .c-time {
+    font: 13px var(--mono);
+    text-align: right;
+
+    &.invalid {
+      border-color: var(--error);
+
+      &:focus {
+        box-shadow: 0 0 0 4px rgb(255 107 107 / 0.18);
+      }
+    }
+  }
+
+  .remove:hover {
+    color: var(--error);
+  }
+}
+
+.add-chapter {
+  padding: 7px 14px 7px 10px;
+  border-style: dashed;
+  color: var(--text-dim);
+  font-size: 13px;
+
+  &:hover {
+    color: var(--text);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
   }
 }
 
@@ -905,7 +989,7 @@ input[type="range"] {
   font-size: 13px;
 }
 
-.now-segment {
+.now-chapter {
   margin-top: 2px;
   font-size: 12px;
   font-weight: 700;
@@ -1109,6 +1193,7 @@ input[type="range"] {
       "album-artist album-artist"
       "album track"
       "title title"
+      "chapters chapters"
       "comment comment"
       "actions actions";
   }

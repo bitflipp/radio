@@ -13,7 +13,7 @@ createApp({
     const uploadInputRef = useTemplateRef("uploadInput");
     const uploading = ref(false);
     const editingFileName = ref(null);
-    const editDraft = ref({ artist: "", albumArtist: "", album: "", title: "", track: 0, comment: "" });
+    const editDraft = ref({ artist: "", albumArtist: "", album: "", title: "", track: 0, comment: "", chapters: [] });
     const playing = ref(false);
     const currentTime = ref(0);
     const duration = ref(0);
@@ -23,6 +23,7 @@ createApp({
     const draggingFiles = ref(false);
     let dragDepth = 0;
     let toastId = 0;
+    let chapterKey = 0;
 
     // Consecutive tracks sharing album artist (falling back to artist) and album form one group; the backend
     // sorts by the same key. Groups whose tracks have differing artists are flagged as mixed.
@@ -44,17 +45,17 @@ createApp({
       return result;
     });
 
-    const activeSegments = computed(() => (activeMedia.value ? parseSegments(activeMedia.value) : []));
-    const currentSegmentIndex = computed(() => {
+    const activeChapters = computed(() => activeMedia.value?.chapters || []);
+    const currentChapterIndex = computed(() => {
       let index = -1;
-      activeSegments.value.forEach((segment, i) => {
-        if (segment.seconds <= currentTime.value + 0.25) {
+      activeChapters.value.forEach((chapter, i) => {
+        if (chapter.start <= currentTime.value + 0.25) {
           index = i;
         }
       });
       return index;
     });
-    const currentSegmentTitle = computed(() => activeSegments.value[currentSegmentIndex.value]?.title || "");
+    const currentChapterTitle = computed(() => activeChapters.value[currentChapterIndex.value]?.title || "");
     const progress = computed(() => (duration.value ? (currentTime.value / duration.value) * 100 : 0));
 
     function loadNumber(key, fallback) {
@@ -83,7 +84,8 @@ createApp({
         media.albumArtist +
         media.album +
         media.title +
-        media.comment
+        media.comment +
+        media.chapters.map((c) => c.title).join("")
       ).toLocaleLowerCase();
       return mediaTermLower.includes(filterTermLower);
     }
@@ -115,11 +117,13 @@ createApp({
       }
     }
 
+    // Parses "SS", "MM:SS" or "HH:MM:SS"; NaN if malformed.
     function timestampToSeconds(timestamp) {
-      return timestamp
-        .split(":")
-        .reverse()
-        .reduce((a, p, i) => a + p * 60 ** i, 0);
+      const parts = timestamp.trim().split(":");
+      if (parts.length > 3 || !parts.every((p) => /^\d+$/.test(p))) {
+        return NaN;
+      }
+      return parts.reduce((a, p) => a * 60 + Number(p), 0);
     }
 
     function formatTime(seconds) {
@@ -133,24 +137,85 @@ createApp({
       return h ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
     }
 
-    function parseSegments(media) {
-      const segments = [];
-      const comment = media.comment || "";
-      if (!comment) {
-        return segments;
+    // In the editor, chapters are rows with a free-text time ("H:MM:SS", "MM:SS" or "SS") and a title.
+    function draftChapter(start, title) {
+      return { key: ++chapterKey, time: Number.isFinite(start) ? formatTime(start) : "", title };
+    }
+
+    function isDraftChapterEmpty(chapter) {
+      return !chapter.time.trim() && !chapter.title.trim();
+    }
+
+    function isDraftChapterValid(chapter) {
+      return isDraftChapterEmpty(chapter) || Number.isFinite(timestampToSeconds(chapter.time));
+    }
+
+    function focusDraftChapter(chapter, field) {
+      nextTick(() => document.querySelector(`[data-chapter="${chapter.key}"] .${field}`)?.focus());
+    }
+
+    // Adds a row at the current playback position (kept in time order) if the track is playing, otherwise an
+    // empty row at the end.
+    function addDraftChapter(media) {
+      const chapters = editDraft.value.chapters;
+      if (media !== activeMedia.value) {
+        const chapter = draftChapter(NaN, "");
+        chapters.push(chapter);
+        focusDraftChapter(chapter, "c-time");
+        return;
       }
-      for (const segment of comment.split("\n")) {
-        if (!segment.trim()) {
-          continue;
-        }
-        if (!segment.includes(";")) {
-          segments.push({ timestamp: "", title: segment, seconds: NaN });
-          continue;
-        }
-        const [timestamp, title] = segment.split(";");
-        segments.push({ timestamp, title, seconds: timestampToSeconds(timestamp) });
+      const chapter = draftChapter(currentTime.value, "");
+      const index = chapters.findIndex((c) => timestampToSeconds(c.time) > currentTime.value);
+      chapters.splice(index < 0 ? chapters.length : index, 0, chapter);
+      focusDraftChapter(chapter, "c-title");
+    }
+
+    function removeDraftChapter(chapter) {
+      editDraft.value.chapters = editDraft.value.chapters.filter((c) => c !== chapter);
+    }
+
+    function setDraftChapterToNow(chapter) {
+      chapter.time = formatTime(currentTime.value);
+    }
+
+    function addChapterAtCurrentPosition() {
+      const media = activeMedia.value;
+      if (!media) {
+        return;
       }
-      return segments;
+      if (editingFileName.value !== media.fileName) {
+        startEdit(media);
+      }
+      addDraftChapter(media);
+    }
+
+    function parseDraftChapters(chapters) {
+      return chapters
+        .filter((c) => !isDraftChapterEmpty(c))
+        .map((c) => {
+          const start = timestampToSeconds(c.time);
+          if (!Number.isFinite(start)) {
+            focusDraftChapter(c, "c-time");
+            throw new Error(`ungültige Zeit „${c.time}“`);
+          }
+          return { start, title: c.title.trim() };
+        })
+        .sort((a, b) => a.start - b.start);
+    }
+
+    // The duration is the end time of the last chapter. Use the player's if this track is loaded, otherwise
+    // load just the file's metadata.
+    function mediaDuration(media) {
+      if (media === activeMedia.value && duration.value) {
+        return Promise.resolve(duration.value);
+      }
+      return new Promise((resolve, reject) => {
+        const audio = new Audio();
+        audio.preload = "metadata";
+        audio.onloadedmetadata = () => resolve(audio.duration);
+        audio.onerror = () => reject(new Error("Dauer konnte nicht ermittelt werden"));
+        audio.src = `/media/${encodeURIComponent(media.fileName)}`;
+      });
     }
 
     function hashString(text) {
@@ -210,13 +275,10 @@ createApp({
       }
     }
 
-    function onSegmentClick(media, segment) {
+    function onChapterClick(media, chapter) {
       activeMedia.value = media;
-      if (!Number.isFinite(segment.seconds)) {
-        return;
-      }
       nextTick(() => {
-        audioRef.value.currentTime = segment.seconds;
+        audioRef.value.currentTime = chapter.start;
         audioRef.value.play();
       });
     }
@@ -284,6 +346,7 @@ createApp({
         title: media.title,
         track: media.track,
         comment: media.comment,
+        chapters: media.chapters.map((c) => draftChapter(c.start, c.title)),
       };
       nextTick(() => document.querySelector(".editor .f-title input")?.focus());
     }
@@ -302,8 +365,14 @@ createApp({
     }
 
     async function saveEdit(media) {
-      const payload = { ...editDraft.value, track: Number(editDraft.value.track) || 0 };
       try {
+        const chapters = parseDraftChapters(editDraft.value.chapters);
+        const payload = {
+          ...editDraft.value,
+          track: Number(editDraft.value.track) || 0,
+          chapters,
+          duration: chapters.length ? await mediaDuration(media) : 0,
+        };
         const response = await fetch(`/api/media/${encodeURIComponent(media.fileName)}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -315,6 +384,7 @@ createApp({
         editingFileName.value = null;
         // Refetch rather than patching locally: album changes can move the track to another group.
         await refreshMedia();
+        toasts.value = toasts.value.filter((t) => t.kind !== "error");
         showToast("success", "Gespeichert.");
       } catch (err) {
         showToast("error", `Speichern fehlgeschlagen: ${err.message}`);
@@ -375,9 +445,12 @@ createApp({
       audioRef.value.muted = value;
     });
 
-    watch(activeMedia, (media) => {
-      currentTime.value = 0;
-      duration.value = 0;
+    watch(activeMedia, (media, previous) => {
+      // A refetch (e.g. after saving tags) replaces the object but keeps the file playing.
+      if (media?.fileName !== previous?.fileName) {
+        currentTime.value = 0;
+        duration.value = 0;
+      }
       if (!media) {
         document.title = "Radio Go Go";
         return;
@@ -410,9 +483,9 @@ createApp({
       mediaCount,
       groups,
       activeMedia,
-      activeSegments,
-      currentSegmentIndex,
-      currentSegmentTitle,
+      activeChapters,
+      currentChapterIndex,
+      currentChapterTitle,
       filterTerm,
       playing,
       currentTime,
@@ -426,13 +499,12 @@ createApp({
       activatePreviousMedia,
       togglePlay,
       formatTime,
-      parseSegments,
       coverStyle,
       initials,
       dismissToast,
       onMediaClick,
       onFilterInputKeyDown,
-      onSegmentClick,
+      onChapterClick,
       onTimeUpdate,
       onDurationChange,
       onSeek,
@@ -444,6 +516,11 @@ createApp({
       cancelEdit,
       onEditorKeyDown,
       saveEdit,
+      isDraftChapterValid,
+      addDraftChapter,
+      removeDraftChapter,
+      setDraftChapterToNow,
+      addChapterAtCurrentPosition,
     };
   },
 }).mount("body");

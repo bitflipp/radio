@@ -38,7 +38,7 @@
           </svg>
           <input
             type="text"
-            placeholder="Künstler, Album, Titel, Segment …"
+            placeholder="Künstler, Album, Titel, Kapitel …"
             v-model="filterTerm"
             ref="filterInput"
             @keydown="onFilterInputKeyDown"
@@ -84,10 +84,44 @@
                   <label class="f-album">Album<input type="text" v-model="editDraft.album" /></label>
                   <label class="f-track">Nr.<input type="number" min="0" v-model.number="editDraft.track" /></label>
                   <label class="f-title">Titel<input type="text" v-model="editDraft.title" /></label>
-                  <label class="f-comment"
-                    >Segmente <small>eine Zeile pro Segment: <code>HH:MM:SS;Titel</code></small>
-                    <textarea v-model="editDraft.comment" placeholder="00:00:00;Intro"></textarea>
-                  </label>
+                  <fieldset class="f-chapters">
+                    <legend>Kapitel <small v-if="editDraft.chapters.length">{{ editDraft.chapters.length }}</small></legend>
+                    <ol class="chapter-rows" v-if="editDraft.chapters.length">
+                      <li v-for="chapter in editDraft.chapters" :key="chapter.key" :data-chapter="chapter.key">
+                        <input
+                          type="text"
+                          class="c-time"
+                          :class="{ invalid: !isDraftChapterValid(chapter) }"
+                          v-model="chapter.time"
+                          placeholder="0:00"
+                          aria-label="Zeit"
+                          title="Zeit (H:MM:SS)"
+                        />
+                        <input type="text" class="c-title" v-model="chapter.title" placeholder="Titel" aria-label="Titel" />
+                        <button
+                          type="button"
+                          class="icon-button"
+                          v-if="activeMedia === media"
+                          title="Aktuelle Position übernehmen"
+                          @click="setDraftChapterToNow(chapter)"
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="12" r="7" />
+                            <path d="M12 2v3m0 14v3M2 12h3m14 0h3" />
+                            <circle class="fill" cx="12" cy="12" r="2" />
+                          </svg>
+                        </button>
+                        <button type="button" class="icon-button remove" title="Kapitel entfernen" @click="removeDraftChapter(chapter)">
+                          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                        </button>
+                      </li>
+                    </ol>
+                    <button type="button" class="button ghost add-chapter" @click="addDraftChapter(media)">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                      {{ activeMedia === media ? "Kapitel bei " + formatTime(currentTime) : "Kapitel hinzufügen" }}
+                    </button>
+                  </fieldset>
+                  <label class="f-comment">Kommentar<textarea v-model="editDraft.comment"></textarea></label>
                   <div class="editor-actions">
                     <small>Strg+Enter speichert · Esc bricht ab</small>
                     <button type="button" class="button ghost" @click="cancelEdit">Abbrechen</button>
@@ -106,14 +140,15 @@
                   <div class="track-artist" v-if="group.mixed || (media.albumArtist && media.albumArtist !== media.artist)">
                     {{ media.artist }}
                   </div>
-                  <div class="segments" v-if="media.comment">
+                  <div class="track-comment" v-if="media.comment">{{ media.comment }}</div>
+                  <div class="chapters" v-if="media.chapters.length">
                     <button
                       type="button"
-                      v-for="(segment, index) of parseSegments(media)"
-                      :class="['segment', { current: activeMedia === media && currentSegmentIndex === index }]"
-                      @click.stop="onSegmentClick(media, segment)"
+                      v-for="(chapter, index) of media.chapters"
+                      :class="['chapter', { current: activeMedia === media && currentChapterIndex === index }]"
+                      @click.stop="onChapterClick(media, chapter)"
                     >
-                      <span class="ts" v-if="segment.timestamp">{{ segment.timestamp }}</span>{{ segment.title }}
+                      <span class="ts">{{ formatTime(chapter.start) }}</span>{{ chapter.title }}
                     </button>
                   </div>
                 </div>
@@ -154,9 +189,9 @@
           />
           <span
             class="marker"
-            v-for="segment of activeSegments.filter((s) => Number.isFinite(s.seconds))"
-            :style="{ left: (duration ? (segment.seconds / duration) * 100 : 0) + '%' }"
-            :title="segment.timestamp + ' ' + segment.title"
+            v-for="chapter of activeChapters"
+            :style="{ left: (duration ? (chapter.start / duration) * 100 : 0) + '%' }"
+            :title="formatTime(chapter.start) + ' ' + chapter.title"
           ></span>
         </div>
         <div class="player-inner">
@@ -169,7 +204,7 @@
               <div class="now-sub">
                 {{ activeMedia.artist }}<template v-if="activeMedia.album"> — {{ activeMedia.album }}</template>
               </div>
-              <div class="now-segment" v-if="currentSegmentTitle">▸ {{ currentSegmentTitle }}</div>
+              <div class="now-chapter" v-if="currentChapterTitle">▸ {{ currentChapterTitle }}</div>
             </div>
             <div class="now-meta idle" v-else>
               <div class="now-title">Bereit zum Senden</div>
@@ -187,6 +222,18 @@
             </button>
             <button type="button" class="icon-button" title="Nächster Titel" @click="activateNextMedia">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M16 5h2v14h-2zM4 5v14l11-7z" /></svg>
+            </button>
+            <button
+              type="button"
+              class="icon-button"
+              title="Kapitel an aktueller Position setzen"
+              :disabled="!activeMedia"
+              @click="addChapterAtCurrentPosition"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 4h10v16l-5-4-5 4z" />
+                <path d="M12 7.5v5M9.5 10h5" />
+              </svg>
             </button>
             <span class="time">{{ formatTime(currentTime) }} <span>/ {{ formatTime(duration) }}</span></span>
           </div>

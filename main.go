@@ -20,6 +20,8 @@ import (
 
 	"github.com/bogem/id3v2/v2"
 	"github.com/dhowden/tag"
+
+	"phinau.de/radiogogo/chapters"
 )
 
 const (
@@ -34,13 +36,23 @@ var (
 )
 
 type media struct {
-	Album       string `json:"album"`
-	AlbumArtist string `json:"albumArtist"`
-	Artist      string `json:"artist"`
-	Title       string `json:"title"`
-	Track       int    `json:"track"`
-	FileName    string `json:"fileName"`
-	Comment     string `json:"comment"`
+	Album       string             `json:"album"`
+	AlbumArtist string             `json:"albumArtist"`
+	Artist      string             `json:"artist"`
+	Title       string             `json:"title"`
+	Track       int                `json:"track"`
+	FileName    string             `json:"fileName"`
+	Comment     string             `json:"comment"`
+	Chapters    []chapters.Chapter `json:"chapters"`
+}
+
+func readChapters(filePath string) []chapters.Chapter {
+	t, err := id3v2.Open(filePath, id3v2.Options{Parse: true, ParseFrames: []string{"Chapters"}})
+	if err != nil {
+		return []chapters.Chapter{}
+	}
+	defer t.Close()
+	return chapters.Read(t)
 }
 
 func readSingleMedia(fileName string) (media, error) {
@@ -55,6 +67,7 @@ func readSingleMedia(fileName string) (media, error) {
 		return media{
 			Title:    fmt.Sprintf("[%s]", fileName),
 			FileName: fileName,
+			Chapters: []chapters.Chapter{},
 		}, nil
 	}
 	d, _ := t.Track()
@@ -66,6 +79,7 @@ func readSingleMedia(fileName string) (media, error) {
 		Track:       d,
 		FileName:    fileName,
 		Comment:     t.Comment(),
+		Chapters:    readChapters(mfp),
 	}, nil
 }
 
@@ -190,12 +204,15 @@ func handleAPIMediaUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 type mediaPatch struct {
-	Artist      string `json:"artist"`
-	AlbumArtist string `json:"albumArtist"`
-	Album       string `json:"album"`
-	Title       string `json:"title"`
-	Track       int    `json:"track"`
-	Comment     string `json:"comment"`
+	Artist      string             `json:"artist"`
+	AlbumArtist string             `json:"albumArtist"`
+	Album       string             `json:"album"`
+	Title       string             `json:"title"`
+	Track       int                `json:"track"`
+	Comment     string             `json:"comment"`
+	Chapters    []chapters.Chapter `json:"chapters"`
+	// Duration in seconds, as measured by the client; the end time of the last chapter.
+	Duration float64 `json:"duration"`
 }
 
 func writeTags(filePath string, p mediaPatch) error {
@@ -223,6 +240,10 @@ func writeTags(filePath string, p mediaPatch) error {
 			Description: "",
 			Text:        p.Comment,
 		})
+	}
+
+	if err := chapters.Set(t, p.Chapters, p.Duration); err != nil {
+		return err
 	}
 
 	return t.Save()

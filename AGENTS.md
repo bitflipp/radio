@@ -17,6 +17,8 @@ HTML5 `<audio>` element.
 - `just cbr [-n] [-b kbit/s] [files...]` — re-encode VBR MP3s (default `media/*.mp3`) to CBR in place via `ffmpeg`
   (`cmd/cbr`), so browser seeking to timestamps is exact. Original ID3 tags are copied byte for byte; CBR files are
   skipped; `-n` is a dry run.
+- `just migrate-chapters [-n] [files...]` — one-off: move legacy `HH:MM:SS;<title>` segment lines out of ID3
+  comments into chapter frames (`cmd/migrate-chapters`).
 - `just update` — `go get -u ./...` then `go mod tidy`.
 - `just deploy` — build and ship the binary to the production host via `scp`/`ssh`, restarting the `radio` systemd service.
 
@@ -36,11 +38,14 @@ No test suite, linter, or formatter config exists for Go. `static/.prettierrc` c
 - **`static/`** — the frontend, no build step, no npm/package.json. `vue.js` is a vendored copy of Vue loaded as
   an ES module directly in the browser by `index.html`. All app logic lives in `index.js`'s single `setup()`
   function (Vue Composition API), rendering into `index.html`'s inline template.
-  - The `comment` ID3 field doubles as a segment/chapter list: each line is `HH:MM:SS;<title>`, parsed by
-    `parseSegments()` and rendered as clickable timestamps that seek the `<audio>` element (`onSegmentClick`).
+  - Chapters (used as bookmarks) are ID3v2 `CHAP` frames plus a `CTOC`, read/written by the `chapters` package and
+    returned as `chapters: [{start, title}]` (seconds). They render as clickable timestamps that seek the `<audio>`
+    element (`onChapterClick`). The editor shows them as time/title rows; the player's bookmark button (or the
+    editor's add button while the track plays) inserts one at the current position. On save the client also sends
+    the file's duration, which becomes the last chapter's end time. The `comment` field is a plain comment.
   - The track list is grouped into albums by the same album key the backend sorts by, so compilations stay together
     when their tracks share an album artist (TPE2). Mixed-artist groups show each track's artist.
-  - `filteredMedia` is a case-insensitive substring filter over artist+album+title+comment; the currently active
+  - `filteredMedia` is a case-insensitive substring filter over artist+album+title+comment+chapter titles; the currently active
     track is always kept visible regardless of the filter. Ctrl+F focuses the filter input; Enter in the filter
     advances to the next match; Escape clears it.
   - Media Session API (`navigator.mediaSession`) wires prev/next track to OS/media-key controls.

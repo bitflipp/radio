@@ -24,3 +24,6 @@ deploy: dist
 
 cbr *args:
 	go run ./cmd/cbr {{args}}
+
+migrate-chapters *args:
+	go run ./cmd/migrate-chapters {{args}}
