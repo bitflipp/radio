@@ -13,14 +13,14 @@ HTML5 `<audio>` element.
 - `just run` — run the server locally (`go run .`), listens on `127.0.0.1:1984`.
 - `just dist` — clean and build a release binary to `dist/radio`.
 - `just clean` — remove `dist/`.
-- `just download` — rsync `media/` down from the production host (`radio@phinau.de:/home/radio/media/`) for local testing. `media/` is gitignored.
+- `linux/scripts/download-radio-media` — rsync `media/` down from the production host (`radio@phinau.de:/home/radio/media/`) for local testing. `media/` is gitignored.
 - `just cbr [-n] [-b kbit/s] [files...]` — re-encode VBR MP3s (default `media/*.mp3`) to CBR in place via `ffmpeg`
   (`cmd/cbr`), so browser seeking to timestamps is exact. Original ID3 tags are copied byte for byte; CBR files are
   skipped; `-n` is a dry run.
 - `just migrate-chapters [-n] [files...]` — one-off: move legacy `HH:MM:SS;<title>` segment lines out of ID3
   comments into chapter frames (`cmd/migrate-chapters`).
 - `just update` — `go get -u ./...` then `go mod tidy`.
-- `just deploy` — build and ship the binary to the production host via `scp`/`ssh`, restarting the `radio` systemd service.
+- `linux/scripts/deploy-radio` — build and ship the binary to the production host via `scp`/`ssh`, restarting the `radio` systemd service.
 
 No test suite, linter, or formatter config exists for Go. `static/.prettierrc` configures Prettier (2-space tabs,
 120 print width) for the frontend files if formatting them.
