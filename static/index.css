@@ -13,7 +13,7 @@
   --gradient: linear-gradient(100deg, var(--accent-2), var(--accent) 50%, var(--accent-3));
   --error: #ff6b6b;
   --success: #5ee6a8;
-  --radius: 14px;
+  --radius: 8px;
   --gutter: clamp(16px, 4vw, 40px);
   --player-height: 96px;
   --font: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -83,7 +83,7 @@ svg {
   span {
     width: 8px;
     height: 100%;
-    border-radius: 4px;
+    border-radius: var(--radius);
     background: var(--gradient);
     background-size: 100% 48px;
     transform-origin: bottom;
@@ -118,7 +118,7 @@ audio {
   gap: 8px;
   padding: 10px 18px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: var(--bg-raised);
   cursor: pointer;
   font-weight: 600;
@@ -127,15 +127,16 @@ audio {
     transform 0.15s,
     background 0.15s,
     border-color 0.15s,
-    box-shadow 0.15s;
+    box-shadow 0.15s,
+    filter 0.15s;
 
   &:hover {
     border-color: var(--accent);
-    transform: translateY(-1px);
+    background: var(--bg-hover);
   }
 
   &:active {
-    transform: translateY(0) scale(0.97);
+    transform: scale(0.97);
   }
 
   &.primary {
@@ -143,6 +144,11 @@ audio {
     background: var(--gradient);
     color: #1a0f1c;
     box-shadow: 0 6px 24px -8px var(--accent);
+
+    &:hover {
+      background: var(--gradient);
+      filter: brightness(1.1);
+    }
   }
 
   &.ghost {
@@ -166,7 +172,7 @@ audio {
   height: 38px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--text-dim);
   cursor: pointer;
@@ -194,7 +200,7 @@ kbd {
   padding: 2px 7px;
   border: 1px solid var(--line);
   border-bottom-width: 2px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   color: var(--text-faint);
   font: 11px var(--mono);
   white-space: nowrap;
@@ -244,7 +250,7 @@ kbd {
   gap: 6px;
   padding: 4px 9px;
   border: 1px solid rgb(255 90 122 / 0.5);
-  border-radius: 6px;
+  border-radius: var(--radius);
   color: var(--accent);
   font-size: 10px;
   font-weight: 800;
@@ -280,7 +286,7 @@ kbd {
   max-width: 640px;
   padding: 0 14px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: var(--bg-raised);
   transition:
     border-color 0.2s,
@@ -369,7 +375,7 @@ kbd {
   place-items: center;
   width: 72px;
   height: 72px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   overflow: hidden;
   box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.8);
 
@@ -406,7 +412,7 @@ kbd {
   align-items: start;
   gap: 4px 12px;
   padding: 10px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   cursor: pointer;
   scroll-margin: 90px 0 calc(var(--player-height) + 40px);
   transition: background 0.15s;
@@ -437,7 +443,7 @@ kbd {
       top: 10px;
       bottom: 10px;
       width: 3px;
-      border-radius: 3px;
+      border-radius: var(--radius);
       background: var(--gradient);
     }
 
@@ -494,7 +500,7 @@ kbd {
   i {
     width: 3px;
     height: 100%;
-    border-radius: 1px;
+    border-radius: var(--radius);
     background: var(--accent);
     transform-origin: bottom;
     transform: scaleY(0.3);
@@ -545,8 +551,8 @@ kbd {
   gap: 8px;
   max-width: 100%;
   padding: 4px 11px 4px 4px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  border: 0;
+  border-radius: var(--radius);
   background: rgb(255 255 255 / 0.02);
   color: var(--text-dim);
   font-size: 13px;
@@ -554,7 +560,6 @@ kbd {
   cursor: pointer;
   transition:
     color 0.15s,
-    border-color 0.15s,
     background 0.15s;
 
   &:not(:has(.ts)) {
@@ -564,19 +569,22 @@ kbd {
   .ts {
     flex: none;
     padding: 1px 7px;
-    border-radius: 999px;
+    border-radius: var(--radius);
     background: var(--bg-hover);
     color: var(--text-faint);
     font: 11px var(--mono);
   }
 
   &:hover {
-    border-color: var(--accent);
+    background: var(--bg-hover);
     color: var(--text);
+
+    .ts {
+      background: var(--line);
+    }
   }
 
   &.current {
-    border-color: transparent;
     background: var(--gradient);
     color: #1a0f1c;
     font-weight: 600;
@@ -671,7 +679,7 @@ kbd {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: var(--radius);
     background: var(--bg);
     font-size: 15px;
     font-weight: 400;
@@ -808,7 +816,7 @@ kbd {
   max-width: 1180px;
   margin: 0 auto;
   border: 1px solid rgb(255 255 255 / 0.08);
-  border-radius: 20px;
+  border-radius: var(--radius);
   background: rgb(23 19 31 / 0.82);
   backdrop-filter: blur(24px) saturate(1.5);
   box-shadow:
@@ -838,7 +846,7 @@ kbd {
     width: 2px;
     height: 6px;
     margin-left: -1px;
-    border-radius: 1px;
+    border-radius: var(--radius);
     background: rgb(255 255 255 / 0.55);
     pointer-events: none;
   }
@@ -855,20 +863,20 @@ input[type="range"] {
 
   &::-webkit-slider-runnable-track {
     height: var(--track);
-    border-radius: 999px;
+    border-radius: var(--radius);
     background: linear-gradient(90deg, var(--accent-2), var(--accent)) 0 / var(--progress, 0%) 100% no-repeat,
       rgb(255 255 255 / 0.12);
   }
 
   &::-moz-range-track {
     height: var(--track);
-    border-radius: 999px;
+    border-radius: var(--radius);
     background: rgb(255 255 255 / 0.12);
   }
 
   &::-moz-range-progress {
     height: var(--track);
-    border-radius: 999px;
+    border-radius: var(--radius);
     background: linear-gradient(90deg, var(--accent-2), var(--accent));
   }
 
@@ -1016,12 +1024,14 @@ input[type="range"] {
   width: 54px;
   height: 54px;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius);
   background: var(--gradient);
   color: #1a0f1c;
   cursor: pointer;
   box-shadow: 0 8px 28px -8px var(--accent);
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    filter 0.15s;
 
   svg {
     width: 24px;
@@ -1029,8 +1039,7 @@ input[type="range"] {
   }
 
   &:hover {
-    transform: scale(1.06);
-    box-shadow: 0 10px 34px -6px var(--accent);
+    filter: brightness(1.1);
   }
 
   &:active {
@@ -1081,7 +1090,7 @@ input[type="range"] {
   padding: 12px 16px;
   border: 1px solid var(--line);
   border-left: 4px solid var(--success);
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--bg-raised);
   box-shadow: 0 16px 40px -16px rgb(0 0 0 / 0.9);
   cursor: pointer;
@@ -1113,7 +1122,7 @@ input[type="range"] {
   width: min(560px, 100%);
   padding: 56px 24px;
   border: 2px dashed var(--accent);
-  border-radius: 28px;
+  border-radius: var(--radius);
   background: rgb(255 90 122 / 0.06);
   text-align: center;
 
