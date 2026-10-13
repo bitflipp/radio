@@ -338,6 +338,30 @@ createApp({
       } catch {}
     }
 
+    // Re-downloads saved tracks whose file changed on the server (tag edits rewrite files in place). The Go file
+    // server sends Last-Modified but no ETag, so that is the validator compared.
+    async function revalidateOfflineFiles() {
+      try {
+        const cache = await caches.open(AUDIO_CACHE);
+        for (const fileName of [...offlineFiles.value]) {
+          const url = mediaURL({ fileName });
+          const cached = await cache.match(url);
+          const head = await fetch(`${url}?revalidate`, { method: "HEAD", cache: "no-cache" });
+          if (!cached || !head.ok) {
+            continue;
+          }
+          const validator = (r) => r.headers.get("ETag") || r.headers.get("Last-Modified");
+          if (validator(head) === validator(cached)) {
+            continue;
+          }
+          const response = await fetch(`${url}?revalidate`, { cache: "no-cache" });
+          if (response.ok) {
+            await cache.put(url, response);
+          }
+        }
+      } catch {}
+    }
+
     async function toggleOffline(media) {
       const fileName = media.fileName;
       if (savingFiles.value.has(fileName)) {
@@ -369,7 +393,7 @@ createApp({
       const response = await fetch("/api/media");
       const data = await response.json();
       if (navigator.onLine) {
-        pruneOfflineFiles(data);
+        pruneOfflineFiles(data).then(revalidateOfflineFiles);
       }
       const activeFileName = activeMedia.value?.fileName;
       allMedia.value = data;

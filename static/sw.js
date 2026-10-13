@@ -49,6 +49,10 @@ async function networkFirst(request) {
 }
 
 async function serveAudio(request, url) {
+  // The page adds ?revalidate to ask the server about a saved track, bypassing the cache.
+  if (url.searchParams.has("revalidate")) {
+    return fetch(request);
+  }
   const cache = await caches.open(AUDIO_CACHE);
   const cached = await cache.match(url.pathname);
   if (!cached) {
