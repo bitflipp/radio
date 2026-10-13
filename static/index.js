@@ -579,7 +579,8 @@ createApp({
       initialized.value = true;
       nextTick(() => {
         audioRef.value.volume = volume.value;
-        focusFilterInput();
+        // Skip on touch devices, where focusing would pop up the on-screen keyboard.
+        if (window.matchMedia("(any-pointer: fine)").matches) focusFilterInput();
       });
     });
 
