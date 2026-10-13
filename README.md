@@ -1,3 +1,5 @@
+<p align="center"><img src="static/favicon.svg" alt="Radio Go Go icon" width="128" height="128"></p>
+
 # Radio Go Go
 
 A personal music streaming server: a small Go binary that serves your own audio files and a single-page web app to
