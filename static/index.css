@@ -1026,7 +1026,6 @@ input[type="range"] {
 
   > div {
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
@@ -1037,6 +1036,28 @@ input[type="range"] {
 
 .now-title {
   font-weight: 700;
+}
+
+.now-info {
+  margin-top: 1px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.marquee > span {
+  display: inline-block;
+  animation: marquee var(--marquee-duration) ease-in-out infinite alternate;
+}
+
+@keyframes marquee {
+  0%,
+  15% {
+    transform: translateX(0);
+  }
+  85%,
+  100% {
+    transform: translateX(var(--marquee-shift));
+  }
 }
 
 .now-chapter {

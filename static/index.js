@@ -2,6 +2,17 @@ import { createApp, ref, computed, watch, useTemplateRef, nextTick } from "./vue
 
 const AUDIO_CACHE = "radio-audio"; // keep in sync with sw.js
 
+// Scrolls an overflowing single-line element back and forth; the text lives in a child <span>.
+const updateMarquee = (el) => {
+  const span = el.firstElementChild;
+  const overflow = span ? span.scrollWidth - el.clientWidth : 0;
+  el.classList.toggle("marquee", overflow > 0);
+  if (overflow > 0) {
+    el.style.setProperty("--marquee-shift", `-${overflow}px`);
+    el.style.setProperty("--marquee-duration", `${Math.max(6, overflow / 25 + 4)}s`);
+  }
+};
+
 createApp({
   setup() {
     const initialized = ref(false);
@@ -66,6 +77,10 @@ createApp({
         }
       });
       return index;
+    });
+    const nowInfo = computed(() => {
+      const m = activeMedia.value;
+      return m ? [m.artist, m.album].filter(Boolean).join(" — ") : "";
     });
     const currentChapterTitle = computed(() => activeChapters.value[currentChapterIndex.value]?.title || "");
     const progress = computed(() => (duration.value ? (currentTime.value / duration.value) * 100 : 0));
@@ -594,6 +609,7 @@ createApp({
       activeChapters,
       currentChapterIndex,
       currentChapterTitle,
+      nowInfo,
       filterTerm,
       playing,
       currentTime,
@@ -637,4 +653,15 @@ createApp({
       addChapterAtCurrentPosition,
     };
   },
-}).mount("body");
+})
+  .directive("marquee", {
+    mounted(el) {
+      el._marqueeObserver = new ResizeObserver(() => updateMarquee(el));
+      el._marqueeObserver.observe(el);
+    },
+    updated: updateMarquee,
+    unmounted(el) {
+      el._marqueeObserver.disconnect();
+    },
+  })
+  .mount("body");

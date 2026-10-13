@@ -224,8 +224,11 @@
               <div class="label" :style="activeMedia && coverStyle(activeMedia.artist, activeMedia.album)"></div>
             </div>
             <div class="now-meta" v-if="activeMedia">
-              <div class="now-title">{{ activeMedia.title }}</div>
-              <div class="now-chapter" v-if="currentChapterTitle">▸ {{ currentChapterTitle }}</div>
+              <div class="now-title" v-marquee><span>{{ activeMedia.title }}</span></div>
+              <div class="now-info" v-if="nowInfo" v-marquee><span>{{ nowInfo }}</span></div>
+              <div class="now-chapter" v-if="currentChapterTitle" v-marquee>
+                <span>▸ {{ currentChapterTitle }}</span>
+              </div>
             </div>
             <div class="now-meta idle" v-else>
               <div class="now-title">Ready to broadcast</div>
