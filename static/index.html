@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -40,19 +40,19 @@
           </svg>
           <input
             type="text"
-            placeholder="Künstler, Album, Titel, Kapitel …"
+            placeholder="Artist, album, title, chapter …"
             v-model="filterTerm"
             ref="filterInput"
             @keydown="onFilterInputKeyDown"
           />
           <span class="search-count" v-if="filterTerm">{{ filteredMedia.length }} / {{ mediaCount }}</span>
-          <kbd v-else>Strg F</kbd>
+          <kbd v-else>Ctrl F</kbd>
         </div>
-        <span class="storage" title="Speicher für Offline-Titel">Offline: {{ storageUsed }}</span>
+        <span class="storage" title="Storage used by offline tracks">Offline: {{ storageUsed }}</span>
         <label class="button upload" :class="{ busy: uploading, disabled: !online }">
           <input type="file" accept=".mp3,audio/mpeg" multiple ref="uploadInput" :disabled="!online" @change="onUploadInputChange" />
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16" /></svg>
-          <span>{{ uploading ? "Lädt hoch …" : "Hochladen" }}</span>
+          <span>{{ uploading ? "Uploading …" : "Upload" }}</span>
         </label>
       </header>
 
@@ -63,10 +63,10 @@
               <span>{{ initials(group.album || group.artist) }}</span>
             </div>
             <div class="album-meta">
-              <h2>{{ group.album || "Ohne Album" }}</h2>
+              <h2>{{ group.album || "No album" }}</h2>
               <p>
-                {{ group.mixed && !group.items[0].albumArtist ? "Verschiedene Künstler" : group.artist || "Unbekannt" }}
-                <span class="dot">·</span> {{ group.items.length }} Titel
+                {{ group.mixed && !group.items[0].albumArtist ? "Various artists" : group.artist || "Unknown" }}
+                <span class="dot">·</span> {{ group.items.length }} {{ group.items.length === 1 ? "track" : "tracks" }}
               </p>
             </div>
           </div>
@@ -80,15 +80,15 @@
             >
               <template v-if="editingFileName === media.fileName">
                 <form class="editor" @click.stop @submit.prevent="saveEdit(media)" @keydown="onEditorKeyDown($event, media)">
-                  <label class="f-artist">Künstler<input type="text" v-model="editDraft.artist" /></label>
+                  <label class="f-artist">Artist<input type="text" v-model="editDraft.artist" /></label>
                   <label class="f-album-artist"
-                    >Album-Künstler<input type="text" v-model="editDraft.albumArtist" :placeholder="editDraft.artist"
+                    >Album artist<input type="text" v-model="editDraft.albumArtist" :placeholder="editDraft.artist"
                   /></label>
                   <label class="f-album">Album<input type="text" v-model="editDraft.album" /></label>
-                  <label class="f-track">Nr.<input type="number" min="0" v-model.number="editDraft.track" /></label>
-                  <label class="f-title">Titel<input type="text" v-model="editDraft.title" /></label>
+                  <label class="f-track">No.<input type="number" min="0" v-model.number="editDraft.track" /></label>
+                  <label class="f-title">Title<input type="text" v-model="editDraft.title" /></label>
                   <fieldset class="f-chapters">
-                    <legend>Kapitel <small v-if="editDraft.chapters.length">{{ editDraft.chapters.length }}</small></legend>
+                    <legend>Chapters <small v-if="editDraft.chapters.length">{{ editDraft.chapters.length }}</small></legend>
                     <ol class="chapter-rows" v-if="editDraft.chapters.length">
                       <li v-for="chapter in editDraft.chapters" :key="chapter.key" :data-chapter="chapter.key">
                         <input
@@ -97,15 +97,15 @@
                           :class="{ invalid: !isDraftChapterValid(chapter) }"
                           v-model="chapter.time"
                           placeholder="0:00"
-                          aria-label="Zeit"
-                          title="Zeit (H:MM:SS)"
+                          aria-label="Time"
+                          title="Time (H:MM:SS)"
                         />
-                        <input type="text" class="c-title" v-model="chapter.title" placeholder="Titel" aria-label="Titel" />
+                        <input type="text" class="c-title" v-model="chapter.title" placeholder="Title" aria-label="Title" />
                         <button
                           type="button"
                           class="icon-button"
                           v-if="activeMedia === media"
-                          title="Aktuelle Position übernehmen"
+                          title="Use current position"
                           @click="setDraftChapterToNow(chapter)"
                         >
                           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -114,20 +114,20 @@
                             <circle class="fill" cx="12" cy="12" r="2" />
                           </svg>
                         </button>
-                        <button type="button" class="icon-button remove" title="Kapitel entfernen" @click="removeDraftChapter(chapter)">
+                        <button type="button" class="icon-button remove" title="Remove chapter" @click="removeDraftChapter(chapter)">
                           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
                         </button>
                       </li>
                     </ol>
                     <button type="button" class="button ghost add-chapter" @click="addDraftChapter(media)">
                       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-                      {{ activeMedia === media ? "Kapitel bei " + formatTime(currentTime) : "Kapitel hinzufügen" }}
+                      {{ activeMedia === media ? "Chapter at " + formatTime(currentTime) : "Add chapter" }}
                     </button>
                   </fieldset>
-                  <label class="f-comment">Kommentar<textarea v-model="editDraft.comment"></textarea></label>
+                  <label class="f-comment">Comment<textarea v-model="editDraft.comment"></textarea></label>
                   <div class="editor-actions">
-                    <button type="button" class="button ghost" @click="cancelEdit">Abbrechen</button>
-                    <button type="submit" class="button primary">Speichern</button>
+                    <button type="button" class="button ghost" @click="cancelEdit">Cancel</button>
+                    <button type="submit" class="button primary">Save</button>
                   </div>
                 </form>
               </template>
@@ -158,7 +158,7 @@
                   <button
                     type="button"
                     :class="['icon-button', 'offline', { saved: offlineFiles.has(media.fileName), saving: savingFiles.has(media.fileName) }]"
-                    :title="offlineFiles.has(media.fileName) ? 'Offline-Kopie entfernen' : 'Offline speichern'"
+                    :title="offlineFiles.has(media.fileName) ? 'Remove offline copy' : 'Save offline'"
                     :disabled="!online && !offlineFiles.has(media.fileName)"
                     @click.stop="toggleOffline(media)"
                   >
@@ -171,7 +171,7 @@
                       <path d="M12 7.5v8m0 0-3-3m3 3 3-3" />
                     </svg>
                   </button>
-                  <button type="button" class="icon-button edit" title="Bearbeiten" :disabled="!online" @click.stop="startEdit(media)">
+                  <button type="button" class="icon-button edit" title="Edit" :disabled="!online" @click.stop="startEdit(media)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" />
                     </svg>
@@ -185,16 +185,16 @@
         <div class="empty" v-if="groups.length === 0">
           <div class="empty-eq"><span></span><span></span><span></span></div>
           <template v-if="mediaCount === 0">
-            <h2>Funkstille.</h2>
-            <p>Zieh MP3-Dateien irgendwo ins Fenster, um loszulegen.</p>
+            <h2>Radio silence.</h2>
+            <p>Drop MP3 files anywhere in the window to get started.</p>
           </template>
           <template v-else-if="!online && !filterTerm">
             <h2>Offline.</h2>
-            <p>Keine Titel offline gespeichert.</p>
+            <p>No tracks saved offline.</p>
           </template>
           <template v-else>
-            <h2>Kein Treffer für „{{ filterTerm }}“.</h2>
-            <p>Esc leert die Suche.</p>
+            <h2>No matches for “{{ filterTerm }}”.</h2>
+            <p>Esc clears the search.</p>
           </template>
         </div>
       </main>
@@ -225,32 +225,28 @@
             </div>
             <div class="now-meta" v-if="activeMedia">
               <div class="now-title">{{ activeMedia.title }}</div>
-              <div class="now-sub">
-                {{ activeMedia.artist }}<template v-if="activeMedia.album"> — {{ activeMedia.album }}</template>
-              </div>
               <div class="now-chapter" v-if="currentChapterTitle">▸ {{ currentChapterTitle }}</div>
             </div>
             <div class="now-meta idle" v-else>
-              <div class="now-title">Bereit zum Senden</div>
-              <div class="now-sub">Titel anklicken oder Leertaste drücken</div>
+              <div class="now-title">Ready to broadcast</div>
             </div>
           </div>
 
           <div class="controls">
-            <button type="button" class="icon-button" title="Vorheriger Titel" @click="activatePreviousMedia">
+            <button type="button" class="icon-button" title="Previous track" @click="activatePreviousMedia">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M6 5h2v14H6zM20 5v14L9 12z" /></svg>
             </button>
-            <button type="button" class="play" :title="playing ? 'Pause' : 'Abspielen'" @click="togglePlay">
+            <button type="button" class="play" :title="playing ? 'Pause' : 'Play'" @click="togglePlay">
               <svg v-if="playing" viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
               <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M8 5v14l11-7z" /></svg>
             </button>
-            <button type="button" class="icon-button" title="Nächster Titel" @click="activateNextMedia">
+            <button type="button" class="icon-button" title="Next track" @click="activateNextMedia">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M16 5h2v14h-2zM4 5v14l11-7z" /></svg>
             </button>
             <button
               type="button"
               class="icon-button"
-              title="Kapitel an aktueller Position setzen"
+              title="Add chapter at current position"
               :disabled="!activeMedia"
               @click="addChapterAtCurrentPosition"
             >
@@ -263,7 +259,7 @@
           </div>
 
           <div class="volume" :style="{ '--progress': volume * 100 + '%' }">
-            <button type="button" class="icon-button" :title="muted ? 'Ton an' : 'Stumm'" @click="muted = !muted">
+            <button type="button" class="icon-button" :title="muted ? 'Unmute' : 'Mute'" @click="muted = !muted">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path class="fill" d="M4 9h4l5-4v14l-5-4H4z" />
                 <path v-if="!muted && volume > 0" d="M16 9a4 4 0 0 1 0 6" />
@@ -271,7 +267,7 @@
                 <path v-if="muted || volume === 0" d="m16 9 5 6m0-6-5 6" />
               </svg>
             </button>
-            <input type="range" min="0" max="1" step="0.01" v-model.number="volume" aria-label="Lautstärke" />
+            <input type="range" min="0" max="1" step="0.01" v-model.number="volume" aria-label="Volume" />
           </div>
         </div>
       </footer>
@@ -285,8 +281,8 @@
       <div class="dropzone" v-if="draggingFiles">
         <div class="dropzone-inner">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16" /></svg>
-          <h2>Loslassen zum Hochladen</h2>
-          <p>MP3-Dateien landen direkt in der Bibliothek</p>
+          <h2>Drop to upload</h2>
+          <p>MP3 files go straight into the library</p>
         </div>
       </div>
     </div>

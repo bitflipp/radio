@@ -58,4 +58,4 @@ No test suite, linter, or formatter config exists for Go. `static/.prettierrc` c
   (`<hash>.mp3`), not the uploaded name. They carry no meaning and are never renamed — tag edits (`writeTags`)
   rewrite the file in place — and a byte-identical re-upload is rejected as a duplicate. Existing files predating
   this scheme keep whatever name they already had.
-- The frontend is served in German (`<html lang="de">`); keep that if adding UI text.
+- The frontend is served in English (`<html lang="en">`); keep that if adding UI text.

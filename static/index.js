@@ -13,7 +13,7 @@ createApp({
     const storageUsed = computed(() => {
       const bytes = allMedia.value.reduce((sum, m) => sum + (offlineFiles.value.has(m.fileName) ? m.size || 0 : 0), 0);
       if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(2).replace(".", ",")} GB`;
-      return `${Math.round(bytes / 1e6).toLocaleString("de-DE")} MB`;
+      return `${Math.round(bytes / 1e6).toLocaleString("en-US")} MB`;
     });
     const filterInputRef = useTemplateRef("filterInput");
     const audioRef = useTemplateRef("audio");
@@ -215,7 +215,7 @@ createApp({
           const start = timestampToSeconds(c.time);
           if (!Number.isFinite(start)) {
             focusDraftChapter(c, "c-time");
-            throw new Error(`ungültige Zeit „${c.time}“`);
+            throw new Error(`invalid time “${c.time}”`);
           }
           return { start, title: c.title.trim() };
         })
@@ -232,7 +232,7 @@ createApp({
         const audio = new Audio();
         audio.preload = "metadata";
         audio.onloadedmetadata = () => resolve(audio.duration);
-        audio.onerror = () => reject(new Error("Dauer konnte nicht ermittelt werden"));
+        audio.onerror = () => reject(new Error("Could not determine duration"));
         audio.src = mediaURL(media);
       });
     }
@@ -383,7 +383,7 @@ createApp({
         await cache.put(mediaURL(media), response);
         offlineFiles.value.add(fileName);
       } catch (err) {
-        showToast("error", `Offline speichern fehlgeschlagen: ${err.message}`);
+        showToast("error", `Saving offline failed: ${err.message}`);
       } finally {
         savingFiles.value.delete(fileName);
       }
@@ -417,9 +417,9 @@ createApp({
           throw new Error(await response.text());
         }
         await refreshMedia();
-        showToast("success", files.length === 1 ? "1 Datei hochgeladen." : `${files.length} Dateien hochgeladen.`);
+        showToast("success", files.length === 1 ? "1 file uploaded." : `${files.length} files uploaded.`);
       } catch (err) {
-        showToast("error", `Hochladen fehlgeschlagen: ${err.message}`);
+        showToast("error", `Upload failed: ${err.message}`);
       } finally {
         uploading.value = false;
         if (uploadInputRef.value) {
@@ -484,9 +484,9 @@ createApp({
         // Refetch rather than patching locally: album changes can move the track to another group.
         await refreshMedia();
         toasts.value = toasts.value.filter((t) => t.kind !== "error");
-        showToast("success", "Gespeichert.");
+        showToast("success", "Saved.");
       } catch (err) {
-        showToast("error", `Speichern fehlgeschlagen: ${err.message}`);
+        showToast("error", `Saving failed: ${err.message}`);
       }
     }
 

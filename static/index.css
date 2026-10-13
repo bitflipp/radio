@@ -1039,11 +1039,6 @@ input[type="range"] {
   font-weight: 700;
 }
 
-.now-sub {
-  color: var(--text-dim);
-  font-size: 13px;
-}
-
 .now-chapter {
   margin-top: 2px;
   font-size: 12px;

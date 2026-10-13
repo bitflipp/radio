@@ -60,7 +60,7 @@ it if you expose it beyond localhost; the server itself has no access control.
 
 ## Notes
 
-- The web UI is in German.
+- The web UI is in English.
 - `media/` file names are opaque hashes and are never renamed; tag edits rewrite files in place.
 
 ## License

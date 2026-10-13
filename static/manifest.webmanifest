@@ -1,7 +1,7 @@
 {
   "name": "Radio Go Go",
   "short_name": "Radio",
-  "lang": "de",
+  "lang": "en",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0e0b14",
