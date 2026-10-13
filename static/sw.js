@@ -3,7 +3,7 @@
 // served from there, including the Range requests <audio> uses for seeking, which the Cache API can't answer itself.
 const SHELL_CACHE = "radio-shell";
 const AUDIO_CACHE = "radio-audio";
-const SHELL_FILES = ["/", "/index.css", "/index.js", "/vue.js", "/favicon.svg", "/api/media"];
+const SHELL_FILES = ["/", "/index.css", "/index.js", "/vue.js", "/favicon.svg", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/api/media"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.addAll(SHELL_FILES)).then(() => self.skipWaiting()));
