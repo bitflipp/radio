@@ -294,7 +294,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create subtree: %s", err)
 	}
-	http.Handle("/", http.FileServerFS(sfs))
+	// The embedded files carry no modification time, so browsers can't revalidate them; no-cache makes them
+	// refetch the (small) frontend on every load instead of guessing a freshness lifetime.
+	staticHandler := http.FileServerFS(sfs)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache")
+		staticHandler.ServeHTTP(w, r)
+	})
 	if err := http.ListenAndServe(address, nil); err != nil {
 		log.Fatalf("failed to listen and serve: %s", err)
 	}
