@@ -325,6 +325,11 @@ kbd {
 .upload {
   margin-left: auto;
 
+  &.disabled {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
   input {
     display: none;
   }
@@ -424,16 +429,22 @@ kbd {
   &:hover {
     background: var(--bg-hover);
 
-    .num {
-      opacity: 0;
-    }
-
-    .play-icon {
+    .edit,
+    .offline {
       opacity: 1;
     }
+  }
 
-    .edit {
-      opacity: 1;
+  /* The play icon promises "click plays", which doesn't hold over the action buttons (or after a tap on touch). */
+  @media (hover: hover) {
+    &:hover:not(:has(.track-actions:hover)) {
+      .num {
+        opacity: 0;
+      }
+
+      .play-icon {
+        opacity: 1;
+      }
     }
   }
 
@@ -459,8 +470,10 @@ kbd {
       opacity: 0;
     }
 
-    &:hover .eq {
-      opacity: 0;
+    @media (hover: hover) {
+      &:hover:not(:has(.track-actions:hover)) .eq {
+        opacity: 0;
+      }
     }
   }
 
@@ -600,6 +613,12 @@ kbd {
   }
 }
 
+.track-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.offline,
 .edit {
   opacity: 0;
   width: 32px;
@@ -617,6 +636,24 @@ kbd {
 
   @media (hover: none) {
     opacity: 0.6;
+  }
+}
+
+.offline {
+  &.saved {
+    opacity: 1;
+    color: var(--success);
+  }
+
+  &.saving {
+    opacity: 1;
+    animation: blink 1s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes blink {
+  to {
+    opacity: 0.3;
   }
 }
 

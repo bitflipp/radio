@@ -17,7 +17,7 @@
       <audio
         ref="audio"
         :autoplay="!!activeMedia"
-        :src="activeMedia && ('/media/' + activeMedia.fileName)"
+        :src="activeMedia && mediaURL(activeMedia)"
         @ended="activateNextMedia"
         @play="playing = true"
         @pause="playing = false"
@@ -46,8 +46,8 @@
           <span class="search-count" v-if="filterTerm">{{ filteredMedia.length }} / {{ mediaCount }}</span>
           <kbd v-else>Strg F</kbd>
         </div>
-        <label class="button upload" :class="{ busy: uploading }">
-          <input type="file" accept=".mp3,audio/mpeg" multiple ref="uploadInput" @change="onUploadInputChange" />
+        <label class="button upload" :class="{ busy: uploading, disabled: !online }">
+          <input type="file" accept=".mp3,audio/mpeg" multiple ref="uploadInput" :disabled="!online" @change="onUploadInputChange" />
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16" /></svg>
           <span>{{ uploading ? "Lädt hoch …" : "Hochladen" }}</span>
         </label>
@@ -151,11 +151,29 @@
                     </button>
                   </div>
                 </div>
-                <button type="button" class="icon-button edit" title="Bearbeiten" @click.stop="startEdit(media)">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" />
-                  </svg>
-                </button>
+                <div class="track-actions">
+                  <button
+                    type="button"
+                    :class="['icon-button', 'offline', { saved: offlineFiles.has(media.fileName), saving: savingFiles.has(media.fileName) }]"
+                    :title="offlineFiles.has(media.fileName) ? 'Offline-Kopie entfernen' : 'Offline speichern'"
+                    :disabled="!online && !offlineFiles.has(media.fileName)"
+                    @click.stop="toggleOffline(media)"
+                  >
+                    <svg v-if="offlineFiles.has(media.fileName)" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="m8 12.5 3 3 5-6" />
+                    </svg>
+                    <svg v-else viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 7.5v8m0 0-3-3m3 3 3-3" />
+                    </svg>
+                  </button>
+                  <button type="button" class="icon-button edit" title="Bearbeiten" :disabled="!online" @click.stop="startEdit(media)">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" />
+                    </svg>
+                  </button>
+                </div>
               </template>
             </li>
           </ol>
@@ -166,6 +184,10 @@
           <template v-if="mediaCount === 0">
             <h2>Funkstille.</h2>
             <p>Zieh MP3-Dateien irgendwo ins Fenster, um loszulegen.</p>
+          </template>
+          <template v-else-if="!online && !filterTerm">
+            <h2>Offline.</h2>
+            <p>Keine Titel offline gespeichert.</p>
           </template>
           <template v-else>
             <h2>Kein Treffer für „{{ filterTerm }}“.</h2>

@@ -1,5 +1,7 @@
 import { createApp, ref, computed, watch, useTemplateRef, nextTick } from "./vue.js";
 
+const AUDIO_CACHE = "radio-audio"; // keep in sync with sw.js
+
 createApp({
   setup() {
     const initialized = ref(false);
@@ -22,6 +24,10 @@ createApp({
     const muted = ref(false);
     const toasts = ref([]);
     const draggingFiles = ref(false);
+    const online = ref(navigator.onLine);
+    // File names of tracks saved for offline playback (in the Cache API, served by sw.js) and of those being saved.
+    const offlineFiles = ref(new Set());
+    const savingFiles = ref(new Set());
     let dragDepth = 0;
     let toastId = 0;
     let chapterKey = 0;
@@ -68,6 +74,10 @@ createApp({
       }
     }
 
+    function mediaURL(media) {
+      return `/media/${encodeURIComponent(media.fileName)}`;
+    }
+
     function albumArtistOf(media) {
       return media.albumArtist || media.artist;
     }
@@ -75,6 +85,9 @@ createApp({
     function filterMedia(media) {
       if (media === activeMedia.value) {
         return true;
+      }
+      if (!online.value && !offlineFiles.value.has(media.fileName)) {
+        return false;
       }
       const filterTermLower = filterTerm.value.toLocaleLowerCase();
       if (!filterTermLower) {
@@ -215,7 +228,7 @@ createApp({
         audio.preload = "metadata";
         audio.onloadedmetadata = () => resolve(audio.duration);
         audio.onerror = () => reject(new Error("Dauer konnte nicht ermittelt werden"));
-        audio.src = `/media/${encodeURIComponent(media.fileName)}`;
+        audio.src = mediaURL(media);
       });
     }
 
@@ -298,9 +311,61 @@ createApp({
       currentTime.value = time;
     }
 
+    async function loadOfflineFiles() {
+      try {
+        const cache = await caches.open(AUDIO_CACHE);
+        const requests = await cache.keys();
+        offlineFiles.value = new Set(requests.map((r) => decodeURIComponent(new URL(r.url).pathname.slice("/media/".length))));
+      } catch {}
+    }
+
+    // Drops saved copies of tracks that no longer exist on the server.
+    async function pruneOfflineFiles(data) {
+      const fileNames = new Set(data.map((m) => m.fileName));
+      try {
+        const cache = await caches.open(AUDIO_CACHE);
+        for (const fileName of offlineFiles.value) {
+          if (!fileNames.has(fileName)) {
+            await cache.delete(mediaURL({ fileName }));
+            offlineFiles.value.delete(fileName);
+          }
+        }
+      } catch {}
+    }
+
+    async function toggleOffline(media) {
+      const fileName = media.fileName;
+      if (savingFiles.value.has(fileName)) {
+        return;
+      }
+      try {
+        const cache = await caches.open(AUDIO_CACHE);
+        if (offlineFiles.value.has(fileName)) {
+          await cache.delete(mediaURL(media));
+          offlineFiles.value.delete(fileName);
+          return;
+        }
+        savingFiles.value.add(fileName);
+        navigator.storage?.persist?.();
+        const response = await fetch(mediaURL(media));
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
+        await cache.put(mediaURL(media), response);
+        offlineFiles.value.add(fileName);
+      } catch (err) {
+        showToast("error", `Offline speichern fehlgeschlagen: ${err.message}`);
+      } finally {
+        savingFiles.value.delete(fileName);
+      }
+    }
+
     async function refreshMedia() {
       const response = await fetch("/api/media");
       const data = await response.json();
+      if (navigator.onLine) {
+        pruneOfflineFiles(data);
+      }
       const activeFileName = activeMedia.value?.fileName;
       allMedia.value = data;
       if (activeFileName) {
@@ -427,6 +492,9 @@ createApp({
       uploadFiles(event.dataTransfer.files);
     });
 
+    window.addEventListener("online", () => (online.value = true));
+    window.addEventListener("offline", () => (online.value = false));
+
     document.addEventListener("keydown", (event) => {
       if (event.ctrlKey && event.key === "f") {
         event.preventDefault();
@@ -474,7 +542,11 @@ createApp({
     navigator.mediaSession.setActionHandler("previoustrack", activatePreviousMedia);
     navigator.mediaSession.setActionHandler("nexttrack", activateNextMedia);
 
-    refreshMedia().then(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+
+    loadOfflineFiles().then(refreshMedia).then(() => {
       initialized.value = true;
       nextTick(() => {
         audioRef.value.volume = volume.value;
@@ -500,6 +572,11 @@ createApp({
       muted,
       toasts,
       draggingFiles,
+      online,
+      offlineFiles,
+      savingFiles,
+      mediaURL,
+      toggleOffline,
       activateNextMedia,
       activatePreviousMedia,
       togglePlay,
