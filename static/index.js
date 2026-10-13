@@ -13,6 +13,7 @@ createApp({
     const uploadInputRef = useTemplateRef("uploadInput");
     const uploading = ref(false);
     const editingFileName = ref(null);
+    const hoverSuppressed = ref(false);
     const editDraft = ref({ artist: "", albumArtist: "", album: "", title: "", track: 0, comment: "", chapters: [] });
     const playing = ref(false);
     const currentTime = ref(0);
@@ -382,6 +383,10 @@ createApp({
           throw new Error(await response.text());
         }
         editingFileName.value = null;
+        // The pointer is still where the save button was, so the row below it would look hovered (play icon)
+        // until the mouse moves.
+        hoverSuppressed.value = true;
+        window.addEventListener("mousemove", () => (hoverSuppressed.value = false), { once: true });
         // Refetch rather than patching locally: album changes can move the track to another group.
         await refreshMedia();
         toasts.value = toasts.value.filter((t) => t.kind !== "error");
@@ -510,6 +515,7 @@ createApp({
       onSeek,
       uploading,
       editingFileName,
+      hoverSuppressed,
       editDraft,
       onUploadInputChange,
       startEdit,

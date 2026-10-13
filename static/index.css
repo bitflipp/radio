@@ -405,6 +405,10 @@ kbd {
   list-style: none;
 }
 
+.tracks.no-hover {
+  pointer-events: none;
+}
+
 .track {
   position: relative;
   display: grid;
@@ -768,11 +772,6 @@ kbd {
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-
-  small {
-    margin-right: auto;
-    color: var(--text-faint);
-  }
 }
 
 /* ---------- Empty state ---------- */
