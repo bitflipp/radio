@@ -322,8 +322,19 @@ kbd {
   white-space: nowrap;
 }
 
+.storage {
+  margin-left: auto;
+  color: var(--text-faint);
+  font: 600 12px var(--mono);
+  white-space: nowrap;
+}
+
 .upload {
   margin-left: auto;
+
+  .storage + & {
+    margin-left: 0;
+  }
 
   &.disabled {
     opacity: 0.35;

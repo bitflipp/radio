@@ -44,6 +44,7 @@ type media struct {
 	FileName    string             `json:"fileName"`
 	Comment     string             `json:"comment"`
 	Chapters    []chapters.Chapter `json:"chapters"`
+	Size        int64              `json:"size"`
 }
 
 func readChapters(filePath string) []chapters.Chapter {
@@ -62,12 +63,17 @@ func readSingleMedia(fileName string) (media, error) {
 		return media{}, fmt.Errorf("failed to open media file: %w", err)
 	}
 	defer mf.Close()
+	var size int64
+	if fi, err := mf.Stat(); err == nil {
+		size = fi.Size()
+	}
 	t, err := tag.ReadFrom(mf)
 	if err != nil {
 		return media{
 			Title:    fmt.Sprintf("[%s]", fileName),
 			FileName: fileName,
 			Chapters: []chapters.Chapter{},
+			Size:     size,
 		}, nil
 	}
 	d, _ := t.Track()
@@ -80,6 +86,7 @@ func readSingleMedia(fileName string) (media, error) {
 		FileName:    fileName,
 		Comment:     t.Comment(),
 		Chapters:    readChapters(mfp),
+		Size:        size,
 	}, nil
 }
 

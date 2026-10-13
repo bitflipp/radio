@@ -10,6 +10,11 @@ createApp({
     const filterTerm = ref("");
     const filteredMedia = computed(() => allMedia.value.filter(filterMedia));
     const mediaCount = computed(() => allMedia.value.length);
+    const storageUsed = computed(() => {
+      const bytes = allMedia.value.reduce((sum, m) => sum + (offlineFiles.value.has(m.fileName) ? m.size || 0 : 0), 0);
+      if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(2).replace(".", ",")} GB`;
+      return `${Math.round(bytes / 1e6).toLocaleString("de-DE")} MB`;
+    });
     const filterInputRef = useTemplateRef("filterInput");
     const audioRef = useTemplateRef("audio");
     const uploadInputRef = useTemplateRef("uploadInput");
@@ -558,6 +563,7 @@ createApp({
       initialized,
       filteredMedia,
       mediaCount,
+      storageUsed,
       groups,
       activeMedia,
       activeChapters,

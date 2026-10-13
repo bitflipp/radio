@@ -48,6 +48,7 @@
           <span class="search-count" v-if="filterTerm">{{ filteredMedia.length }} / {{ mediaCount }}</span>
           <kbd v-else>Strg F</kbd>
         </div>
+        <span class="storage" title="Speicher für Offline-Titel">Offline: {{ storageUsed }}</span>
         <label class="button upload" :class="{ busy: uploading, disabled: !online }">
           <input type="file" accept=".mp3,audio/mpeg" multiple ref="uploadInput" :disabled="!online" @change="onUploadInputChange" />
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16" /></svg>
