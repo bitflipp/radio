@@ -63,6 +63,12 @@ it if you expose it beyond localhost; the server itself has no access control.
 - The web UI is in English.
 - `media/` file names are opaque hashes and are never renamed; tag edits rewrite files in place.
 
+# AI assistance
+
+Parts of this project were written with AI assistance. The models involved:
+
+- Claude Sonnet/Opus
+
 ## License
 
 [MIT](LICENSE)
