@@ -29,6 +29,7 @@ import (
 const (
 	address       = "127.0.0.1:1984"
 	mediaRoot     = "./media"
+	trashRoot     = "./trash"
 	maxUploadSize = 100 << 20 // 100 MiB per request
 )
 
@@ -338,6 +339,30 @@ func handleAPIMediaPatch(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(m)
 }
 
+// handleAPIMediaDelete is a soft delete: the file moves to trashRoot, so it can be restored by hand.
+func handleAPIMediaDelete(w http.ResponseWriter, r *http.Request) {
+	fileName := r.PathValue("fileName")
+	if fileName == "" || fileName != filepath.Base(fileName) || fileName == ".." {
+		http.Error(w, "invalid file name", http.StatusBadRequest)
+		return
+	}
+	if err := os.MkdirAll(trashRoot, 0o755); err != nil {
+		log.Printf("failed to create trash directory: %s", err)
+		http.Error(w, "failed to delete file", http.StatusInternalServerError)
+		return
+	}
+	if err := os.Rename(path.Join(mediaRoot, fileName), path.Join(trashRoot, fileName)); err != nil {
+		if os.IsNotExist(err) {
+			http.Error(w, "file not found", http.StatusNotFound)
+			return
+		}
+		log.Printf("failed to move %q to trash: %s", fileName, err)
+		http.Error(w, "failed to delete file", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func main() {
 	if err := os.MkdirAll(mediaRoot, 0o755); err != nil {
 		log.Fatalf("failed to ensure media directory: %s", err)
@@ -345,6 +370,7 @@ func main() {
 	http.HandleFunc("GET /api/media", handleAPIMedia)
 	http.HandleFunc("POST /api/media", handleAPIMediaUpload)
 	http.HandleFunc("PATCH /api/media/{fileName}", handleAPIMediaPatch)
+	http.HandleFunc("DELETE /api/media/{fileName}", handleAPIMediaDelete)
 	http.Handle("/media/", http.StripPrefix("/media/", http.FileServer(http.Dir(mediaRoot))))
 	sfs, err := fs.Sub(staticFS, "static")
 	if err != nil {

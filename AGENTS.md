@@ -62,3 +62,5 @@ No test suite, linter, or formatter config exists for Go. `static/.prettierrc` c
   (`id3v2`, `chapters`); the others use Vorbis comments, rewritten in place by the `vorbis` package (FLAC block /
   Ogg header pages), with chapters stored as `CHAPTERnnn`/`CHAPTERnnnNAME` fields.
 - The frontend is served in English (`<html lang="en">`); keep that if adding UI text.
+- Deleting a track (`DELETE /api/media/{fileName}`) is soft: the file is moved to `./trash/` (gitignored, created on
+  demand), not removed. Restore by moving it back into `media/`.

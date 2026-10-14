@@ -822,6 +822,13 @@ kbd {
   gap: 10px;
 }
 
+.editor-actions .delete {
+  margin-right: auto;
+  &:hover {
+    color: var(--error);
+  }
+}
+
 /* ---------- Empty state ---------- */
 
 .empty {

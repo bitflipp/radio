@@ -126,7 +126,8 @@
                   </fieldset>
                   <label class="f-comment">Comment<textarea v-model="editDraft.comment"></textarea></label>
                   <div class="editor-actions">
-                    <button type="button" class="button ghost" @click="cancelEdit">Cancel</button>
+                    <button type="button" class="button ghost delete" @click="deleteMedia(media)">Delete</button>
+                    <button type="button" class="button ghost cancel" @click="cancelEdit">Cancel</button>
                     <button type="submit" class="button primary">Save</button>
                   </div>
                 </form>

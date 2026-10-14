@@ -505,6 +505,23 @@ createApp({
       }
     }
 
+    async function deleteMedia(media) {
+      if (!confirm(`Delete "${media.title}"?`)) {
+        return;
+      }
+      try {
+        const response = await fetch(`/api/media/${encodeURIComponent(media.fileName)}`, { method: "DELETE" });
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
+        editingFileName.value = null;
+        await refreshMedia();
+        showToast("success", "Deleted.");
+      } catch (err) {
+        showToast("error", `Deleting failed: ${err.message}`);
+      }
+    }
+
     function hasFiles(event) {
       return event.dataTransfer && Array.from(event.dataTransfer.types).includes("Files");
     }
@@ -646,6 +663,7 @@ createApp({
       cancelEdit,
       onEditorKeyDown,
       saveEdit,
+      deleteMedia,
       isDraftChapterValid,
       addDraftChapter,
       removeDraftChapter,
