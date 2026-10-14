@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"embed"
 	"encoding/hex"
@@ -22,6 +23,7 @@ import (
 	"github.com/dhowden/tag"
 
 	"phinau.de/radiogogo/chapters"
+	"phinau.de/radiogogo/vorbis"
 )
 
 const (
@@ -47,7 +49,27 @@ type media struct {
 	Size        int64              `json:"size"`
 }
 
+// audioExts lists the accepted upload formats; the sniff func checks the file's magic bytes.
+var audioExts = map[string]func(head []byte) bool{
+	".mp3":  func(b []byte) bool { return http.DetectContentType(b) == "audio/mpeg" },
+	".ogg":  isOgg,
+	".oga":  isOgg,
+	".opus": isOgg,
+	".flac": func(b []byte) bool { return bytes.HasPrefix(b, []byte("fLaC")) },
+}
+
+func isOgg(b []byte) bool { return bytes.HasPrefix(b, []byte("OggS")) }
+
+func isID3(fileName string) bool { return strings.ToLower(filepath.Ext(fileName)) == ".mp3" }
+
 func readChapters(filePath string) []chapters.Chapter {
+	if !isID3(filePath) {
+		c, err := vorbis.Read(filePath)
+		if err != nil {
+			return []chapters.Chapter{}
+		}
+		return chapters.ReadVorbis(c)
+	}
 	t, err := id3v2.Open(filePath, id3v2.Options{Parse: true, ParseFrames: []string{"Chapters"}})
 	if err != nil {
 		return []chapters.Chapter{}
@@ -138,8 +160,10 @@ func handleAPIMedia(w http.ResponseWriter, r *http.Request) {
 
 func saveUploadedFile(fh *multipart.FileHeader) (media, error) {
 	name := filepath.Base(filepath.Clean(fh.Filename))
-	if strings.ToLower(filepath.Ext(name)) != ".mp3" {
-		return media{}, fmt.Errorf("not an mp3 file")
+	ext := strings.ToLower(filepath.Ext(name))
+	sniff, ok := audioExts[ext]
+	if !ok {
+		return media{}, fmt.Errorf("unsupported file type (expected MP3, OGG, OPUS or FLAC)")
 	}
 
 	src, err := fh.Open()
@@ -148,10 +172,10 @@ func saveUploadedFile(fh *multipart.FileHeader) (media, error) {
 	}
 	defer src.Close()
 
-	var sniff [512]byte
-	n, _ := io.ReadFull(src, sniff[:])
-	if ct := http.DetectContentType(sniff[:n]); ct != "audio/mpeg" {
-		return media{}, fmt.Errorf("does not look like an mp3 file")
+	var head [512]byte
+	n, _ := io.ReadFull(src, head[:])
+	if !sniff(head[:n]) {
+		return media{}, fmt.Errorf("file content does not match its %s extension", ext)
 	}
 	if _, err := src.Seek(0, io.SeekStart); err != nil {
 		return media{}, fmt.Errorf("failed to rewind upload: %w", err)
@@ -168,7 +192,7 @@ func saveUploadedFile(fh *multipart.FileHeader) (media, error) {
 		return media{}, fmt.Errorf("failed to rewind upload: %w", err)
 	}
 
-	destName := hex.EncodeToString(h.Sum(nil)) + ".mp3"
+	destName := hex.EncodeToString(h.Sum(nil)) + ext
 	dst, err := os.OpenFile(path.Join(mediaRoot, destName), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if err != nil {
 		if os.IsExist(err) {
@@ -223,6 +247,31 @@ type mediaPatch struct {
 }
 
 func writeTags(filePath string, p mediaPatch) error {
+	if !isID3(filePath) {
+		return writeVorbisTags(filePath, p)
+	}
+	return writeID3Tags(filePath, p)
+}
+
+func writeVorbisTags(filePath string, p mediaPatch) error {
+	return vorbis.Update(filePath, func(c *vorbis.Comments) error {
+		c.Set("ARTIST", p.Artist)
+		c.Set("ALBUMARTIST", p.AlbumArtist)
+		c.Set("ALBUM", p.Album)
+		c.Set("TITLE", p.Title)
+		track := ""
+		if p.Track > 0 {
+			track = strconv.Itoa(p.Track)
+		}
+		c.Set("TRACKNUMBER", track)
+		// dhowden/tag prefers COMMENT but falls back to DESCRIPTION, so clear both to avoid resurrecting an old one.
+		c.Set("DESCRIPTION", "")
+		c.Set("COMMENT", p.Comment)
+		return chapters.SetVorbis(c, p.Chapters)
+	})
+}
+
+func writeID3Tags(filePath string, p mediaPatch) error {
 	t, err := id3v2.Open(filePath, id3v2.Options{Parse: true})
 	if err != nil {
 		return fmt.Errorf("failed to open tag: %w", err)

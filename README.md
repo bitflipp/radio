@@ -12,7 +12,7 @@ browse, filter and play them. No database, no build step, no external services.
   filter, `Enter` jumps to the next match, `Esc` clears it.
 - **Chapters as bookmarks.** ID3v2 chapters show up as clickable timestamps that seek within the track. Add one at
   the current position with the bookmark button.
-- **Upload and edit.** Upload MP3s and edit their tags and chapters in the browser. Files are stored under the
+- **Upload and edit.** Upload MP3, OGG, Opus and FLAC files and edit their tags and chapters in the browser. Files are stored under the
   SHA-256 hash of their content, so duplicates are rejected.
 - **Offline playback.** Individual tracks can be stored for offline use through a service worker, and the app is
   installable as a PWA.

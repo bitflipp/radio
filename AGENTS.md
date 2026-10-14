@@ -58,4 +58,7 @@ No test suite, linter, or formatter config exists for Go. `static/.prettierrc` c
   (`<hash>.mp3`), not the uploaded name. They carry no meaning and are never renamed — tag edits (`writeTags`)
   rewrite the file in place — and a byte-identical re-upload is rejected as a duplicate. Existing files predating
   this scheme keep whatever name they already had.
+- MP3, OGG (Vorbis/Opus) and FLAC are accepted (`audioExts` in `main.go`). MP3 tags and chapters are ID3v2
+  (`id3v2`, `chapters`); the others use Vorbis comments, rewritten in place by the `vorbis` package (FLAC block /
+  Ogg header pages), with chapters stored as `CHAPTERnnn`/`CHAPTERnnnNAME` fields.
 - The frontend is served in English (`<html lang="en">`); keep that if adding UI text.

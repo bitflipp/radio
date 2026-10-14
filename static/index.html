@@ -50,7 +50,7 @@
         </div>
         <span class="storage" title="Storage used by offline tracks">Offline: {{ storageUsed }}</span>
         <label class="button upload" :class="{ busy: uploading, disabled: !online }">
-          <input type="file" accept=".mp3,audio/mpeg" multiple ref="uploadInput" :disabled="!online" @change="onUploadInputChange" />
+          <input type="file" accept=".mp3,.ogg,.oga,.opus,.flac,audio/mpeg,audio/ogg,audio/flac" multiple ref="uploadInput" :disabled="!online" @change="onUploadInputChange" />
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16" /></svg>
           <span>{{ uploading ? "Uploading …" : "Upload" }}</span>
         </label>
@@ -186,7 +186,7 @@
           <div class="empty-eq"><span></span><span></span><span></span></div>
           <template v-if="mediaCount === 0">
             <h2>Radio silence.</h2>
-            <p>Drop MP3 files anywhere in the window to get started.</p>
+            <p>Drop MP3, OGG, Opus or FLAC files anywhere in the window to get started.</p>
           </template>
           <template v-else-if="!online && !filterTerm">
             <h2>Offline.</h2>
@@ -285,7 +285,7 @@
         <div class="dropzone-inner">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 20h16" /></svg>
           <h2>Drop to upload</h2>
-          <p>MP3 files go straight into the library</p>
+          <p>MP3, OGG, Opus and FLAC files go straight into the library</p>
         </div>
       </div>
     </div>
